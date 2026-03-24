@@ -34,26 +34,117 @@
         </div>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
     <script>
+        // --- 1. ELEMENTOS DEL REPRODUCTOR ---
         const audio = document.getElementById('radioStream');
         const playBtn = document.getElementById('playBtn');
         const volumeSlider = document.getElementById('volumeSlider');
         const visualizer = document.getElementById('visualizer');
+        const tituloRadio = document.querySelector('h1');
+        const subtituloRadio = document.querySelector('p');
 
-        // Control de Play/Pausa y Animación
-        playBtn.addEventListener('click', () => {
-            if (audio.paused) {
-                audio.play();
+        audio.volume = 0.5; 
+
+        // --- 2. PEGA AQUÍ TU FIREBASE CONFIG DEL PROYECTO ROBOCLASS ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCs4PnCfDpGvEP5kKbIFe6H-QgF1HVAtWE",
+            authDomain: "roboclass-b929a.firebaseapp.com",
+            projectId: "roboclass-b929a",
+            storageBucket: "roboclass-b929a.firebasestorage.app",
+            messagingSenderId: "719167351070",
+            appId: "1:719167351070:web:3d5df1e151eed11748810f"
+        };
+
+        // --- 3. INICIALIZAR FIREBASE ---
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let playlist = [];
+        let cancionActual = 0;
+        let autoDjActivo = false;
+
+        // --- 4. CARGAR LA PLAYLIST DE EMERGENCIA ---
+        db.collection("playlist_emergencia")
+          .where("activa", "==", true)
+          .orderBy("orden")
+          .get()
+          .then((querySnapshot) => {
+              querySnapshot.forEach((doc) => {
+                  playlist.push(doc.data());
+              });
+              console.log("Playlist de emergencia cargada:", playlist.length, "canciones.");
+          }).catch((error) => {
+              console.log("Error al cargar playlist:", error);
+          });
+
+        // --- 5. EL "SWITCH": DETECTAR CAÍDA DE SEÑAL ---
+        function activarAutoDJ() {
+            if (playlist.length > 0 && !autoDjActivo) {
+                autoDjActivo = true;
+                reproducirCancion(0);
                 playBtn.innerHTML = '⏸️ Pausar';
-                visualizer.classList.add('active'); // Enciende las luces
-            } else {
-                audio.pause();
-                playBtn.innerHTML = '▶️ Escuchar';
-                visualizer.classList.remove('active'); // Apaga las luces
+            } else if (playlist.length === 0) {
+                console.log("No hay canciones en la playlist de emergencia.");
+            }
+        }
+
+        function reproducirCancion(indice) {
+            if (indice >= playlist.length) {
+                indice = 0; // Vuelve a empezar si llega al final
+            }
+            cancionActual = indice;
+            const cancion = playlist[indice];
+
+            // Verificamos que escribiste bien 'url_audio' en Firebase
+            if (!cancion.url_audio) {
+                console.error("¡Cuidado! No se encontró el campo 'url_audio' en Firebase para esta canción.");
+                return;
+            }
+
+            console.log("AutoDJ reproduciendo:", cancion.titulo);
+            
+            audio.src = cancion.url_audio;
+            
+            // Reproducimos la canción de emergencia
+            audio.play().then(() => {
+                visualizer.classList.add('active');
+                tituloRadio.innerText = "AutoDJ Activado";
+                subtituloRadio.innerText = "🎶 " + cancion.titulo + " - " + cancion.artista;
+            }).catch(error => {
+                console.error("El enlace MP3 de emergencia está roto o bloqueado:", error);
+            });
+        }
+
+        // Pasar a la siguiente canción automáticamente
+        audio.addEventListener('ended', () => {
+            if (autoDjActivo) {
+                reproducirCancion(cancionActual + 1);
             }
         });
 
-        // Control de Volumen
+        // --- 6. CONTROLES INTELIGENTES ---
+        playBtn.addEventListener('click', () => {
+            if (audio.paused) {
+                // Intentamos reproducir el en vivo (Yanapak)
+                audio.play().then(() => {
+                    // Si Yanapak está encendido, funciona normal
+                    playBtn.innerHTML = '⏸️ Pausar';
+                    visualizer.classList.add('active');
+                }).catch((error) => {
+                    // Si Yanapak está apagado, atrapamos el error y lanzamos la música
+                    console.log("Señal principal apagada. Iniciando AutoDJ...");
+                    activarAutoDJ();
+                });
+            } else {
+                audio.pause();
+                playBtn.innerHTML = '▶️ Escuchar';
+                visualizer.classList.remove('active');
+            }
+        });
+
         volumeSlider.addEventListener('input', (e) => {
             audio.volume = e.target.value;
         });
