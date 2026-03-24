@@ -148,6 +148,33 @@
         volumeSlider.addEventListener('input', (e) => {
             audio.volume = e.target.value;
         });
+        // --- 7. DETECTOR DE RETORNO AL VIVO ---
+        // Cada 15 segundos revisamos si RadioBOSS volvió
+        setInterval(() => {
+            if (autoDjActivo) {
+                console.log("AutoDJ activo. Verificando si RadioBOSS volvió...");
+                
+                // Creamos un audio invisible para "probar" la señal de Yanapak
+                let testAudio = new Audio("https://radios.yanapak.org/cecap?test=" + Date.now());
+                testAudio.volume = 0; // Silencio total
+                
+                testAudio.play().then(() => {
+                    console.log("¡Señal de RadioBOSS detectada! Volviendo al vivo...");
+                    autoDjActivo = false;
+                    testAudio.pause();
+                    
+                    // Volvemos a la fuente original
+                    audio.src = "https://radios.yanapak.org/cecap";
+                    audio.play();
+                    
+                    // Restauramos los textos originales
+                    tituloRadio.innerText = "Radio CECAP Rivera";
+                    subtituloRadio.innerText = "Transmitiendo en vivo...";
+                }).catch(() => {
+                    console.log("RadioBOSS sigue apagado. Continúa el AutoDJ.");
+                });
+            }
+        }, 15000); // 15 segundos es un buen tiempo para no saturar
     </script>
 </body>
 </html>
