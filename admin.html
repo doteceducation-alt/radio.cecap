@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Admin - Radio CECAP</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 20px; color: #333; }
+        .admin-container { max-width: 800px; margin: 0 auto; }
+        .card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h2 { margin-top: 0; color: #2c5364; }
+        input[type="text"], input[type="number"] {
+            width: 100%; padding: 10px; margin: 8px 0 15px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;
+        }
+        button { background-color: #2c5364; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px;}
+        button:hover { background-color: #0f2027; }
+        button.btn-eliminar { background-color: #d9534f; width: auto; padding: 5px 10px; font-size: 14px;}
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 10px; border-bottom: 1px solid #ddd; text-align: left; }
+        th { background-color: #f8f9fa; }
+        #mensaje { font-weight: bold; margin-top: 10px; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <div class="admin-container">
+        <div class="card">
+            <h2>🎵 Agregar Canción al AutoDJ</h2>
+            
+            <label>Título de la canción:</label>
+            <input type="text" id="titulo" placeholder="Ej: Himno de la Alegría">
+            
+            <label>Artista o Banda:</label>
+            <input type="text" id="artista" placeholder="Ej: Beethoven">
+            
+            <label>Número de Orden (1, 2, 3...):</label>
+            <input type="number" id="orden" placeholder="Posición en la lista">
+            
+            <label>Enlace del Audio (URL):</label>
+            <input type="text" id="urlAudio" placeholder="Ej: https://tu-usuario.github.io/app-radio-cecap/musica/cancion.mp3">
+            
+            <button id="btnGuardar">💾 Guardar Canción en la Lista</button>
+            <p id="mensaje"></p>
+        </div>
+
+        <div class="card">
+            <h2>📋 Playlist de Emergencia Actual</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Orden</th>
+                        <th>Título</th>
+                        <th>Artista</th>
+                        <th>Estado</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaCanciones">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <script>
+        // --- 1. CONFIGURACIÓN DE FIREBASE ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCs4PnCfDpGvEP5kKbIFe6H-QgF1HVAtWE",
+            authDomain: "roboclass-b929a.firebaseapp.com",
+            projectId: "roboclass-b929a",
+            storageBucket: "roboclass-b929a.firebasestorage.app",
+            messagingSenderId: "719167351070",
+            appId: "1:719167351070:web:3d5df1e151eed11748810f"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // --- 2. LÓGICA PARA LEER LA PLAYLIST (TIEMPO REAL) ---
+        const tabla = document.getElementById('tablaCanciones');
+
+        db.collection("playlist_emergencia").orderBy("orden").onSnapshot((querySnapshot) => {
+            tabla.innerHTML = ''; 
+            querySnapshot.forEach((doc) => {
+                const cancion = doc.data();
+                const estado = cancion.activa ? '🟢 Activa' : '🔴 Inactiva';
+                
+                tabla.innerHTML += `
+                    <tr>
+                        <td>${cancion.orden}</td>
+                        <td><strong>${cancion.titulo}</strong></td>
+                        <td>${cancion.artista}</td>
+                        <td>${estado}</td>
+                        <td><button class="btn-eliminar" onclick="eliminarCancion('${doc.id}')">🗑️ Borrar</button></td>
+                    </tr>
+                `;
+            });
+        });
+
+        // --- 3. LÓGICA PARA GUARDAR EN BASE DE DATOS ---
+        const btnGuardar = document.getElementById('btnGuardar');
+        const mensaje = document.getElementById('mensaje');
+
+        btnGuardar.addEventListener('click', async () => {
+            const titulo = document.getElementById('titulo').value;
+            const artista = document.getElementById('artista').value;
+            const orden = parseInt(document.getElementById('orden').value);
+            const urlAudio = document.getElementById('urlAudio').value;
+
+            if (!titulo || !artista || !orden || !urlAudio) {
+                mensaje.style.color = "red";
+                mensaje.innerText = "❌ Por favor, completa todos los campos.";
+                return;
+            }
+
+            btnGuardar.disabled = true;
+            mensaje.style.color = "blue";
+            mensaje.innerText = "⏳ Guardando datos...";
+
+            try {
+                await db.collection("playlist_emergencia").add({
+                    titulo: titulo,
+                    artista: artista,
+                    orden: orden,
+                    url_audio: urlAudio,
+                    activa: true
+                });
+
+                mensaje.style.color = "green";
+                mensaje.innerText = "✅ ¡Canción guardada con éxito!";
+                document.getElementById('titulo').value = '';
+                document.getElementById('artista').value = '';
+                document.getElementById('orden').value = '';
+                document.getElementById('urlAudio').value = '';
+
+            } catch (error) {
+                console.error(error);
+                mensaje.style.color = "red";
+                mensaje.innerText = "❌ Error al guardar: " + error.message;
+            } finally {
+                btnGuardar.disabled = false;
+            }
+        });
+
+        // --- 4. LÓGICA PARA ELIMINAR CANCIONES ---
+        window.eliminarCancion = function(id) {
+            if(confirm("¿Estás seguro de que quieres borrar esta canción del AutoDJ?")) {
+                db.collection("playlist_emergencia").doc(id).delete();
+            }
+        };
+    </script>
+</body>
+</html>
