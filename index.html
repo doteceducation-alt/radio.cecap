@@ -4,38 +4,67 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Radio CECAP Rivera</title>
-    
-    <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Ajuste para el QR */
+        .qr-section {
+            margin-top: 30px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        .qr-section img {
+            width: 100px;
+            height: 100px;
+            border: 3px solid white;
+            border-radius: 10px;
+        }
+        .qr-text {
+            font-size: 14px;
+            text-align: left;
+            line-height: 1.2;
+            color: white;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
     <div class="player-container">
-        <img src="logocecap.jpg" alt="Logo Radio CECAP" id="logoRadio" 
-     style="width: 150px; border-radius: 50%; cursor: pointer;" 
-     onclick="accesoAdmin()">
+        <img src="logocecap.jpg" alt="Logo CECAP" id="logoRadio" 
+             style="width: 150px; border-radius: 50%; cursor: pointer; border: 3px solid white;" 
+             onclick="accesoAdmin()">
         
         <h1>Radio CECAP Rivera</h1>
-        <p>Transmitiendo en vivo desde nuestros estudios en Domingo A. Lor 1625, Rivera, Uruguay</p>
+        <p id="subtitulo">Transmitiendo en vivo desde Rivera, Uruguay</p>
 
         <div class="visualizer" id="visualizer">
-            <div class="bar"></div>
-            <div class="bar"></div>
-            <div class="bar"></div>
-            <div class="bar"></div>
-            <div class="bar"></div>
+            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+            <div class="bar"></div><div class="bar"></div>
         </div>
 
         <audio id="radioStream" src="https://radios.yanapak.org/cecap" preload="none"></audio>
 
         <button id="playBtn">▶️ Escuchar</button>
-        <div id="contadorContenedor" style="margin-top: 15px; font-size: 14px; color: #666; font-weight: bold;">
-    👁️ <span id="numOyentes">0</span> oyentes en línea
+
+        <div id="contadorContenedor" style="margin-top: 15px; font-size: 14px; color: #fff; font-weight: bold;">
+            👁️ <span id="numOyentes">0</span> oyentes en línea
         </div>
 
         <div class="volume-container">
-            <span style="font-size: 20px;">🔈</span>
+            <span>🔈</span>
             <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.5">
-            <span style="font-size: 20px;">🔊</span>
+            <span>🔊</span>
+        </div>
+
+        <div class="qr-section">
+            <img src="qr-radio.png" alt="Escanéame">
+            <div class="qr-text">
+                ¡ESCANEA Y<br>COMPARTE LA<br>RADIO DE CECAP!
+            </div>
         </div>
     </div>
 
@@ -43,29 +72,21 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
     <script>
-        // --- FUNCIÓN DE ACCESO SECRETO AL ADMIN ---
         function accesoAdmin() {
             const claveCorrecta = "cecap2026"; 
-            const intento = prompt("🔒 Área restringida. Ingresa la contraseña de administrador:");
-            if (intento === claveCorrecta) {
-                window.location.href = "admin.html";
-            } else if (intento !== null) {
-                alert("❌ Contraseña incorrecta. Acceso denegado.");
-            }
+            const intento = prompt("🔒 Área restringida. Ingresa la contraseña:");
+            if (intento === claveCorrecta) window.location.href = "admin.html";
+            else if (intento !== null) alert("❌ Acceso denegado.");
         }
 
-        // --- 1. ELEMENTOS DEL REPRODUCTOR ---
         const audio = document.getElementById('radioStream');
         const playBtn = document.getElementById('playBtn');
         const volumeSlider = document.getElementById('volumeSlider');
         const visualizer = document.getElementById('visualizer');
         const tituloRadio = document.querySelector('h1');
-        const subtituloRadio = document.querySelector('p');
+        const subtituloRadio = document.getElementById('subtitulo');
         const numOyentesElemento = document.getElementById('numOyentes');
 
-        audio.volume = 0.5; 
-
-        // --- 2. CONFIGURACIÓN FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyCs4PnCfDpGvEP5kKbIFe6H-QgF1HVAtWE",
             authDomain: "roboclass-b929a.firebaseapp.com",
@@ -74,8 +95,6 @@
             messagingSenderId: "719167351070",
             appId: "1:719167351070:web:3d5df1e151eed11748810f"
         };
-
-        // --- 3. INICIALIZAR FIREBASE ---
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
@@ -83,53 +102,30 @@
         let cancionActual = 0;
         let autoDjActivo = false;
 
-        // --- 4. CARGAR PLAYLIST ---
-        db.collection("playlist_emergencia")
-          .where("activa", "==", true)
-          .orderBy("orden")
-          .get()
-          .then((querySnapshot) => {
-              querySnapshot.forEach((doc) => {
-                  playlist.push(doc.data());
-              });
-              console.log("Playlist cargada:", playlist.length);
-          });
-
-        // --- 5. LÓGICA AUTODJ ---
-        function activarAutoDJ() {
-            if (playlist.length > 0 && !autoDjActivo) {
-                autoDjActivo = true;
-                reproducirCancion(0);
-                playBtn.innerHTML = '⏸️ Pausar';
-            }
-        }
+        db.collection("playlist_emergencia").where("activa", "==", true).orderBy("orden").get().then((snap) => {
+            snap.forEach((doc) => playlist.push(doc.data()));
+        });
 
         function reproducirCancion(indice) {
             if (indice >= playlist.length) indice = 0;
             cancionActual = indice;
             const cancion = playlist[indice];
-            if (!cancion.url_audio) return;
-
             audio.src = cancion.url_audio;
             audio.play().then(() => {
+                autoDjActivo = true;
                 visualizer.classList.add('active');
                 tituloRadio.innerText = "AutoDJ Activado";
                 subtituloRadio.innerText = "🎶 " + cancion.titulo + " - " + cancion.artista;
             });
         }
 
-        audio.addEventListener('ended', () => {
-            if (autoDjActivo) reproducirCancion(cancionActual + 1);
-        });
-
-        // --- 6. CONTROLES ---
         playBtn.addEventListener('click', () => {
             if (audio.paused) {
                 audio.play().then(() => {
                     playBtn.innerHTML = '⏸️ Pausar';
                     visualizer.classList.add('active');
                 }).catch(() => {
-                    activarAutoDJ();
+                    if(playlist.length > 0) reproducirCancion(0);
                 });
             } else {
                 audio.pause();
@@ -138,51 +134,30 @@
             }
         });
 
-        volumeSlider.addEventListener('input', (e) => { audio.volume = e.target.value; });
+        volumeSlider.addEventListener('input', (e) => audio.volume = e.target.value);
 
-        // --- 7. DETECTOR DE RETORNO ---
         setInterval(() => {
             if (autoDjActivo) {
-                let URL_VIVO = "https://radios.yanapak.org/cecap?nocache=" + Date.now();
-                let testAudio = new Audio(URL_VIVO);
-                testAudio.volume = 0;
-                testAudio.play().then(() => {
+                let test = new Audio("https://radios.yanapak.org/cecap?nc=" + Date.now());
+                test.volume = 0;
+                test.play().then(() => {
                     autoDjActivo = false;
-                    testAudio.pause();
+                    test.pause();
                     audio.pause();
                     audio.src = "https://radios.yanapak.org/cecap";
                     audio.play();
                     tituloRadio.innerText = "Radio CECAP Rivera";
                     subtituloRadio.innerText = "Transmitiendo en vivo...";
-                }).catch(() => { console.log("Sigue off..."); });
+                }).catch(() => console.log("Vivo offline"));
             }
         }, 20000);
 
-        // --- 8. CONTADOR DE OYENTES (EL QUE FALTABA) ---
         async function gestionarOyente() {
-            try {
-                // Registrar este nuevo oyente
-                const ref = await db.collection("oyentes_activos").add({
-                    hora: firebase.firestore.FieldValue.serverTimestamp()
-                });
-
-                // Borrar registro al cerrar pestaña
-                window.addEventListener('unload', () => {
-                    ref.delete();
-                });
-
-                console.log("Oyente conectado.");
-            } catch (e) {
-                console.error("Error contador:", e);
-            }
+            const ref = await db.collection("oyentes_activos").add({ t: Date.now() });
+            window.addEventListener('unload', () => ref.delete());
         }
-
-        // Escuchar en tiempo real cuántos hay
-        db.collection("oyentes_activos").onSnapshot((snapshot) => {
-            numOyentesElemento.innerText = snapshot.size;
-        });
-
-        gestionarOyente(); // Arrancar el contador
+        db.collection("oyentes_activos").onSnapshot(snap => numOyentesElemento.innerText = snap.size);
+        gestionarOyente();
     </script>
 </body>
 </html>
