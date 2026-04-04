@@ -5,58 +5,71 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Admin - Radio CECAP</title>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 20px; color: #333; }
-        .admin-container { max-width: 800px; margin: 0 auto; }
-        .card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        h2 { margin-top: 0; color: #2c5364; }
-        input[type="text"], input[type="number"] {
-            width: 100%; padding: 10px; margin: 8px 0 15px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;
-        }
-        button { background-color: #2c5364; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px;}
-        button:hover { background-color: #0f2027; }
-        button.btn-eliminar { background-color: #d9534f; width: auto; padding: 5px 10px; font-size: 14px;}
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { padding: 10px; border-bottom: 1px solid #ddd; text-align: left; }
-        th { background-color: #f8f9fa; }
-        #mensaje { font-weight: bold; margin-top: 10px; text-align: center; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f3; padding: 20px; color: #333; }
+        .admin-container { max-width: 900px; margin: 0 auto; }
+        .card { background: white; padding: 25px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .helper-card { background: #d1ecf1; border-left: 5px solid #0c5460; }
+        h2 { margin-top: 0; color: #2c5364; border-bottom: 2px solid #2c5364; padding-bottom: 10px; }
+        input { width: 100%; padding: 12px; margin: 8px 0 15px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        .url-display { background: #fff; padding: 10px; border: 1px dashed #0c5460; font-family: monospace; margin-top: 10px; display: block; word-break: break-all; }
+        button { background-color: #2c5364; color: white; padding: 12px; border: none; border-radius: 6px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 10px;}
+        button:hover { background-color: #1e3c4a; }
+        .btn-copy { background-color: #0c5460; margin-bottom: 10px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
+        .btn-status { padding: 5px 10px; border-radius: 4px; border: none; cursor: pointer; font-size: 12px; color: white; }
+        .active-bg { background-color: #28a745; }
+        .inactive-bg { background-color: #ffc107; color: #333; }
+        .btn-delete { background-color: #dc3545; }
     </style>
 </head>
 <body>
+    <div id="contadorContenedor" style="margin-top: 15px; font-size: 14px; color: #666; font-weight: bold;">
+    👁️ <span id="numOyentes">0</span> oyentes en línea
+    </div>
 
     <div class="admin-container">
-        <div class="card">
-            <h2>🎵 Agregar Canción al AutoDJ</h2>
+        
+        <div class="card helper-card">
+            <h2>🔗 Generador de Enlaces GitHub</h2>
+            <p>Escribe el nombre del archivo como está en GitHub (ej: <strong>himno.mp3</strong>):</p>
+            <input type="text" id="nombreArchivoHelper" placeholder="nombre-del-archivo.mp3" oninput="generarURL()">
             
-            <label>Título de la canción:</label>
-            <input type="text" id="titulo" placeholder="Ej: Himno de la Alegría">
-            
-            <label>Artista o Banda:</label>
-            <input type="text" id="artista" placeholder="Ej: Beethoven">
-            
-            <label>Número de Orden (1, 2, 3...):</label>
-            <input type="number" id="orden" placeholder="Posición en la lista">
-            
-            <label>Enlace del Audio (URL):</label>
-            <input type="text" id="urlAudio" placeholder="Ej: https://tu-usuario.github.io/app-radio-cecap/musica/cancion.mp3">
-            
-            <button id="btnGuardar">💾 Guardar Canción en la Lista</button>
-            <p id="mensaje"></p>
+            <p>Tu URL lista para copiar:</p>
+            <span id="urlGenerada" class="url-display">https://doteceducation-alt.github.io/radio.cecap/</span>
+            <button class="btn-copy" onclick="copiarURL()">📋 Copiar esta URL</button>
         </div>
 
         <div class="card">
-            <h2>📋 Playlist de Emergencia Actual</h2>
+            <h2>🎵 Agregar a la Playlist</h2>
+            <label>Título:</label>
+            <input type="text" id="titulo" placeholder="Ej: Himno Nacional">
+            
+            <label>Artista:</label>
+            <input type="text" id="artista" placeholder="Ej: Uruguay">
+            
+            <label>Orden:</label>
+            <input type="number" id="orden" placeholder="Ej: 1">
+            
+            <label>Pegar URL generada aquí:</label>
+            <input type="text" id="urlAudio" placeholder="Pega aquí lo que copiaste arriba">
+            
+            <button id="btnGuardar">💾 Guardar Canción</button>
+        </div>
+
+        <div class="card">
+            <h2>🎶 Canciones Actuales</h2>
             <table>
                 <thead>
                     <tr>
-                        <th>Orden</th>
-                        <th>Título</th>
-                        <th>Artista</th>
+                        <th>#</th>
+                        <th>Canción</th>
                         <th>Estado</th>
-                        <th>Acción</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
-                <tbody id="tablaCanciones">
-                    </tbody>
+                <tbody id="tablaCanciones"></tbody>
             </table>
         </div>
     </div>
@@ -65,7 +78,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
     <script>
-        // --- 1. CONFIGURACIÓN DE FIREBASE ---
+        // CONFIGURACIÓN FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyCs4PnCfDpGvEP5kKbIFe6H-QgF1HVAtWE",
             authDomain: "roboclass-b929a.firebaseapp.com",
@@ -74,82 +87,66 @@
             messagingSenderId: "719167351070",
             appId: "1:719167351070:web:3d5df1e151eed11748810f"
         };
-
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // --- 2. LÓGICA PARA LEER LA PLAYLIST (TIEMPO REAL) ---
-        const tabla = document.getElementById('tablaCanciones');
+        // LÓGICA DEL ASISTENTE
+        const baseDir = "https://doteceducation-alt.github.io/radio.cecap/";
+        
+        function generarURL() {
+            const nombre = document.getElementById('nombreArchivoHelper').value.trim();
+            // Reemplazamos espacios por %20 automáticamente por si se te olvida
+            const nombreLimpio = nombre.replace(/ /g, "%20");
+            document.getElementById('urlGenerada').innerText = baseDir + nombreLimpio;
+        }
 
+        function copiarURL() {
+            const texto = document.getElementById('urlGenerada').innerText;
+            navigator.clipboard.writeText(texto);
+            alert("URL copiada: " + texto);
+        }
+
+        // LÓGICA DE FIREBASE (TABLA Y GUARDADO)
         db.collection("playlist_emergencia").orderBy("orden").onSnapshot((querySnapshot) => {
-            tabla.innerHTML = ''; 
+            const tabla = document.getElementById('tablaCanciones');
+            tabla.innerHTML = '';
             querySnapshot.forEach((doc) => {
-                const cancion = doc.data();
-                const estado = cancion.activa ? '🟢 Activa' : '🔴 Inactiva';
-                
+                const c = doc.data();
                 tabla.innerHTML += `
                     <tr>
-                        <td>${cancion.orden}</td>
-                        <td><strong>${cancion.titulo}</strong></td>
-                        <td>${cancion.artista}</td>
-                        <td>${estado}</td>
-                        <td><button class="btn-eliminar" onclick="eliminarCancion('${doc.id}')">🗑️ Borrar</button></td>
-                    </tr>
-                `;
+                        <td>${c.orden}</td>
+                        <td><strong>${c.titulo}</strong></td>
+                        <td>${c.activa ? '✅' : '⚠️'}</td>
+                        <td>
+                            <button class="btn-status ${c.activa ? 'inactive-bg' : 'active-bg'}" onclick="toggleStatus('${doc.id}', ${c.activa})">${c.activa ? 'Pausar' : 'Activar'}</button>
+                            <button class="btn-status btn-delete" onclick="eliminar('${doc.id}')">🗑️</button>
+                        </td>
+                    </tr>`;
             });
         });
 
-        // --- 3. LÓGICA PARA GUARDAR EN BASE DE DATOS ---
-        const btnGuardar = document.getElementById('btnGuardar');
-        const mensaje = document.getElementById('mensaje');
-
-        btnGuardar.addEventListener('click', async () => {
+        document.getElementById('btnGuardar').addEventListener('click', async () => {
             const titulo = document.getElementById('titulo').value;
             const artista = document.getElementById('artista').value;
             const orden = parseInt(document.getElementById('orden').value);
             const urlAudio = document.getElementById('urlAudio').value;
 
-            if (!titulo || !artista || !orden || !urlAudio) {
-                mensaje.style.color = "red";
-                mensaje.innerText = "❌ Por favor, completa todos los campos.";
-                return;
-            }
+            if(!titulo || !urlAudio) return alert("Faltan datos");
 
-            btnGuardar.disabled = true;
-            mensaje.style.color = "blue";
-            mensaje.innerText = "⏳ Guardando datos...";
-
-            try {
-                await db.collection("playlist_emergencia").add({
-                    titulo: titulo,
-                    artista: artista,
-                    orden: orden,
-                    url_audio: urlAudio,
-                    activa: true
-                });
-
-                mensaje.style.color = "green";
-                mensaje.innerText = "✅ ¡Canción guardada con éxito!";
-                document.getElementById('titulo').value = '';
-                document.getElementById('artista').value = '';
-                document.getElementById('orden').value = '';
-                document.getElementById('urlAudio').value = '';
-
-            } catch (error) {
-                console.error(error);
-                mensaje.style.color = "red";
-                mensaje.innerText = "❌ Error al guardar: " + error.message;
-            } finally {
-                btnGuardar.disabled = false;
-            }
+            await db.collection("playlist_emergencia").add({
+                titulo, artista, orden, url_audio: urlAudio, activa: true
+            });
+            
+            // Limpiar campos
+            document.getElementById('titulo').value = '';
+            document.getElementById('nombreArchivoHelper').value = '';
+            document.getElementById('urlAudio').value = '';
+            alert("¡Canción agregada con éxito!");
         });
 
-        // --- 4. LÓGICA PARA ELIMINAR CANCIONES ---
-        window.eliminarCancion = function(id) {
-            if(confirm("¿Estás seguro de que quieres borrar esta canción del AutoDJ?")) {
-                db.collection("playlist_emergencia").doc(id).delete();
-            }
-        };
+        window.toggleStatus = (id, current) => db.collection("playlist_emergencia").doc(id).update({ activa: !current });
+        window.eliminar = (id) => { if(confirm("¿Borrar?")) db.collection("playlist_emergencia").doc(id).delete(); };
+
     </script>
 </body>
 </html>

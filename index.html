@@ -10,7 +10,9 @@
 </head>
 <body>
     <div class="player-container">
-        <img src="logo.png" alt="Logo Radio CECAP" id="logoRadio" style="width: 150px; border-radius: 50%;">
+        <img src="logocecap.jpg" alt="Logo Radio CECAP" id="logoRadio" 
+     style="width: 150px; border-radius: 50%; cursor: pointer;" 
+     onclick="accesoAdmin()">
         
         <h1>Radio CECAP Rivera</h1>
         <p>Transmitiendo en vivo desde nuestros estudios en Domingo A. Lor 1625, Rivera, Uruguay</p>
@@ -26,6 +28,9 @@
         <audio id="radioStream" src="https://radios.yanapak.org/cecap" preload="none"></audio>
 
         <button id="playBtn">▶️ Escuchar</button>
+        <div id="contadorContenedor" style="margin-top: 15px; font-size: 14px; color: #666; font-weight: bold;">
+    👁️ <span id="numOyentes">0</span> oyentes en línea
+        </div>
 
         <div class="volume-container">
             <span style="font-size: 20px;">🔈</span>
@@ -38,6 +43,22 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
     <script>
+        // --- FUNCIÓN DE ACCESO SECRETO AL ADMIN ---
+        function accesoAdmin() {
+            // Definimos la contraseña (puedes cambiar 'cecap2026' por la que quieras)
+            const claveCorrecta = "cecap2026"; 
+            
+            // Le pedimos la clave al usuario
+            const intento = prompt("🔒 Área restringida. Ingresa la contraseña de administrador:");
+
+            if (intento === claveCorrecta) {
+                // Si es correcta, nos manda al panel
+                window.location.href = "admin.html";
+            } else if (intento !== null) {
+                // Si es incorrecta (y no canceló), avisamos
+                alert("❌ Contraseña incorrecta. Acceso denegado.");
+            }
+        }
         // --- 1. ELEMENTOS DEL REPRODUCTOR ---
         const audio = document.getElementById('radioStream');
         const playBtn = document.getElementById('playBtn');
@@ -148,33 +169,40 @@
         volumeSlider.addEventListener('input', (e) => {
             audio.volume = e.target.value;
         });
-        // --- 7. DETECTOR DE RETORNO AL VIVO ---
-        // Cada 15 segundos revisamos si RadioBOSS volvió
+        // --- 7. DETECTOR DE RETORNO AL VIVO (VERSIÓN AGRESIVA) ---
         setInterval(() => {
             if (autoDjActivo) {
-                console.log("AutoDJ activo. Verificando si RadioBOSS volvió...");
+                console.log("Verificando señal de RadioBOSS...");
                 
-                // Creamos un audio invisible para "probar" la señal de Yanapak
-                let testAudio = new Audio("https://radios.yanapak.org/cecap?test=" + Date.now());
-                testAudio.volume = 0; // Silencio total
+                // El "?nocache=" es vital para que el navegador no nos mienta
+                let URL_VIVO = "https://radios.yanapak.org/cecap?nocache=" + Date.now();
+                let testAudio = new Audio(URL_VIVO);
+                testAudio.volume = 0;
                 
                 testAudio.play().then(() => {
-                    console.log("¡Señal de RadioBOSS detectada! Volviendo al vivo...");
+                    console.log("¡RadioBOSS detectado! Forzando desconexión de AutoDJ...");
+                    
                     autoDjActivo = false;
                     testAudio.pause();
+                    testAudio.src = ""; // Limpiamos el rastro del audio de prueba
                     
-                    // Volvemos a la fuente original
+                    // PASO CRÍTICO: "Resetear" el reproductor principal
+                    audio.pause();
+                    audio.removeAttribute('src'); // Eliminamos la URL del AutoDJ
+                    audio.load();                // Forzamos al navegador a olvidar el archivo anterior
+                    
+                    // Ahora sí, conectamos al vivo real
                     audio.src = "https://radios.yanapak.org/cecap";
                     audio.play();
                     
-                    // Restauramos los textos originales
                     tituloRadio.innerText = "Radio CECAP Rivera";
                     subtituloRadio.innerText = "Transmitiendo en vivo...";
+                    visualizer.classList.add('active');
                 }).catch(() => {
-                    console.log("RadioBOSS sigue apagado. Continúa el AutoDJ.");
+                    console.log("RadioBOSS sigue en silencio...");
                 });
             }
-        }, 15000); // 15 segundos es un buen tiempo para no saturar
+        }, 20000); // Bajamos a 10 segundos para que sea más rápido
     </script>
 </body>
 </html>
