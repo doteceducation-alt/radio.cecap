@@ -45,20 +45,15 @@
     <script>
         // --- FUNCIÓN DE ACCESO SECRETO AL ADMIN ---
         function accesoAdmin() {
-            // Definimos la contraseña (puedes cambiar 'cecap2026' por la que quieras)
             const claveCorrecta = "cecap2026"; 
-            
-            // Le pedimos la clave al usuario
             const intento = prompt("🔒 Área restringida. Ingresa la contraseña de administrador:");
-
             if (intento === claveCorrecta) {
-                // Si es correcta, nos manda al panel
                 window.location.href = "admin.html";
             } else if (intento !== null) {
-                // Si es incorrecta (y no canceló), avisamos
                 alert("❌ Contraseña incorrecta. Acceso denegado.");
             }
         }
+
         // --- 1. ELEMENTOS DEL REPRODUCTOR ---
         const audio = document.getElementById('radioStream');
         const playBtn = document.getElementById('playBtn');
@@ -66,10 +61,11 @@
         const visualizer = document.getElementById('visualizer');
         const tituloRadio = document.querySelector('h1');
         const subtituloRadio = document.querySelector('p');
+        const numOyentesElemento = document.getElementById('numOyentes');
 
         audio.volume = 0.5; 
 
-        // --- 2. PEGA AQUÍ TU FIREBASE CONFIG DEL PROYECTO ROBOCLASS ---
+        // --- 2. CONFIGURACIÓN FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyCs4PnCfDpGvEP5kKbIFe6H-QgF1HVAtWE",
             authDomain: "roboclass-b929a.firebaseapp.com",
@@ -87,7 +83,7 @@
         let cancionActual = 0;
         let autoDjActivo = false;
 
-        // --- 4. CARGAR LA PLAYLIST DE EMERGENCIA ---
+        // --- 4. CARGAR PLAYLIST ---
         db.collection("playlist_emergencia")
           .where("activa", "==", true)
           .orderBy("orden")
@@ -96,67 +92,43 @@
               querySnapshot.forEach((doc) => {
                   playlist.push(doc.data());
               });
-              console.log("Playlist de emergencia cargada:", playlist.length, "canciones.");
-          }).catch((error) => {
-              console.log("Error al cargar playlist:", error);
+              console.log("Playlist cargada:", playlist.length);
           });
 
-        // --- 5. EL "SWITCH": DETECTAR CAÍDA DE SEÑAL ---
+        // --- 5. LÓGICA AUTODJ ---
         function activarAutoDJ() {
             if (playlist.length > 0 && !autoDjActivo) {
                 autoDjActivo = true;
                 reproducirCancion(0);
                 playBtn.innerHTML = '⏸️ Pausar';
-            } else if (playlist.length === 0) {
-                console.log("No hay canciones en la playlist de emergencia.");
             }
         }
 
         function reproducirCancion(indice) {
-            if (indice >= playlist.length) {
-                indice = 0; // Vuelve a empezar si llega al final
-            }
+            if (indice >= playlist.length) indice = 0;
             cancionActual = indice;
             const cancion = playlist[indice];
+            if (!cancion.url_audio) return;
 
-            // Verificamos que escribiste bien 'url_audio' en Firebase
-            if (!cancion.url_audio) {
-                console.error("¡Cuidado! No se encontró el campo 'url_audio' en Firebase para esta canción.");
-                return;
-            }
-
-            console.log("AutoDJ reproduciendo:", cancion.titulo);
-            
             audio.src = cancion.url_audio;
-            
-            // Reproducimos la canción de emergencia
             audio.play().then(() => {
                 visualizer.classList.add('active');
                 tituloRadio.innerText = "AutoDJ Activado";
                 subtituloRadio.innerText = "🎶 " + cancion.titulo + " - " + cancion.artista;
-            }).catch(error => {
-                console.error("El enlace MP3 de emergencia está roto o bloqueado:", error);
             });
         }
 
-        // Pasar a la siguiente canción automáticamente
         audio.addEventListener('ended', () => {
-            if (autoDjActivo) {
-                reproducirCancion(cancionActual + 1);
-            }
+            if (autoDjActivo) reproducirCancion(cancionActual + 1);
         });
 
-        // --- 6. CONTROLES INTELIGENTES ---
+        // --- 6. CONTROLES ---
         playBtn.addEventListener('click', () => {
             if (audio.paused) {
-                // Intentamos reproducir el en vivo (Yanapak)
                 audio.play().then(() => {
-                    // Si Yanapak está encendido, funciona normal
                     playBtn.innerHTML = '⏸️ Pausar';
                     visualizer.classList.add('active');
-                }).catch((error) => {
-                    // Si Yanapak está apagado, atrapamos el error y lanzamos la música
-                    console.log("Señal principal apagada. Iniciando AutoDJ...");
+                }).catch(() => {
                     activarAutoDJ();
                 });
             } else {
@@ -166,43 +138,51 @@
             }
         });
 
-        volumeSlider.addEventListener('input', (e) => {
-            audio.volume = e.target.value;
-        });
-        // --- 7. DETECTOR DE RETORNO AL VIVO (VERSIÓN AGRESIVA) ---
+        volumeSlider.addEventListener('input', (e) => { audio.volume = e.target.value; });
+
+        // --- 7. DETECTOR DE RETORNO ---
         setInterval(() => {
             if (autoDjActivo) {
-                console.log("Verificando señal de RadioBOSS...");
-                
-                // El "?nocache=" es vital para que el navegador no nos mienta
                 let URL_VIVO = "https://radios.yanapak.org/cecap?nocache=" + Date.now();
                 let testAudio = new Audio(URL_VIVO);
                 testAudio.volume = 0;
-                
                 testAudio.play().then(() => {
-                    console.log("¡RadioBOSS detectado! Forzando desconexión de AutoDJ...");
-                    
                     autoDjActivo = false;
                     testAudio.pause();
-                    testAudio.src = ""; // Limpiamos el rastro del audio de prueba
-                    
-                    // PASO CRÍTICO: "Resetear" el reproductor principal
                     audio.pause();
-                    audio.removeAttribute('src'); // Eliminamos la URL del AutoDJ
-                    audio.load();                // Forzamos al navegador a olvidar el archivo anterior
-                    
-                    // Ahora sí, conectamos al vivo real
                     audio.src = "https://radios.yanapak.org/cecap";
                     audio.play();
-                    
                     tituloRadio.innerText = "Radio CECAP Rivera";
                     subtituloRadio.innerText = "Transmitiendo en vivo...";
-                    visualizer.classList.add('active');
-                }).catch(() => {
-                    console.log("RadioBOSS sigue en silencio...");
-                });
+                }).catch(() => { console.log("Sigue off..."); });
             }
-        }, 20000); // Bajamos a 10 segundos para que sea más rápido
+        }, 20000);
+
+        // --- 8. CONTADOR DE OYENTES (EL QUE FALTABA) ---
+        async function gestionarOyente() {
+            try {
+                // Registrar este nuevo oyente
+                const ref = await db.collection("oyentes_activos").add({
+                    hora: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                // Borrar registro al cerrar pestaña
+                window.addEventListener('unload', () => {
+                    ref.delete();
+                });
+
+                console.log("Oyente conectado.");
+            } catch (e) {
+                console.error("Error contador:", e);
+            }
+        }
+
+        // Escuchar en tiempo real cuántos hay
+        db.collection("oyentes_activos").onSnapshot((snapshot) => {
+            numOyentesElemento.innerText = snapshot.size;
+        });
+
+        gestionarOyente(); // Arrancar el contador
     </script>
 </body>
 </html>
