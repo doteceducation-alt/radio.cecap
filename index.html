@@ -98,34 +98,60 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
+        // --- SISTEMA AUTODJ ALEATORIO ---
         let playlist = [];
-        let cancionActual = 0;
+        let cancionActualIndex = -1;
         let autoDjActivo = false;
 
-        db.collection("playlist_emergencia").where("activa", "==", true).orderBy("orden").get().then((snap) => {
+        // Cargar canciones en tiempo real
+        db.collection("playlist_emergencia").where("activa", "==", true).onSnapshot((snap) => {
+            playlist = [];
             snap.forEach((doc) => playlist.push(doc.data()));
         });
 
-        function reproducirCancion(indice) {
-            if (indice >= playlist.length) indice = 0;
-            cancionActual = indice;
-            const cancion = playlist[indice];
+        // Reproducir una canción al azar sin repetir la última
+        function reproducirAleatoria() {
+            if (playlist.length === 0) return;
+
+            let nuevoIndex;
+            if (playlist.length > 1) {
+                do {
+                    nuevoIndex = Math.floor(Math.random() * playlist.length);
+                } while (nuevoIndex === cancionActualIndex);
+            } else {
+                nuevoIndex = 0;
+            }
+
+            cancionActualIndex = nuevoIndex;
+            const cancion = playlist[cancionActualIndex];
+            
             audio.src = cancion.url_audio;
             audio.play().then(() => {
                 autoDjActivo = true;
                 visualizer.classList.add('active');
-                tituloRadio.innerText = "AutoDJ Activado";
+                tituloRadio.innerText = "AutoDJ Activado 🔀";
                 subtituloRadio.innerText = "🎶 " + cancion.titulo + " - " + cancion.artista;
-            });
+            }).catch(err => console.log("Error en AutoDJ:", err));
         }
 
+        // Cuando la canción termina, saltar a la siguiente aleatoria
+        audio.addEventListener('ended', () => {
+            if (autoDjActivo) {
+                reproducirAleatoria();
+            }
+        });
+
+        // --- CONTROL PRINCIPAL ---
         playBtn.addEventListener('click', () => {
             if (audio.paused) {
                 audio.play().then(() => {
                     playBtn.innerHTML = '⏸️ Pausar';
                     visualizer.classList.add('active');
+                    tituloRadio.innerText = "Radio CECAP Rivera";
+                    subtituloRadio.innerText = "Transmitiendo en vivo desde Rivera, Uruguay";
                 }).catch(() => {
-                    if(playlist.length > 0) reproducirCancion(0);
+                    // Si falla el streaming en vivo, salta el AutoDJ aleatorio
+                    if(playlist.length > 0) reproducirAleatoria();
                 });
             } else {
                 audio.pause();
@@ -136,6 +162,7 @@
 
         volumeSlider.addEventListener('input', (e) => audio.volume = e.target.value);
 
+        // Verificador de retorno de señal en vivo (cada 20 segundos)
         setInterval(() => {
             if (autoDjActivo) {
                 let test = new Audio("https://radios.yanapak.org/cecap?nc=" + Date.now());
@@ -147,13 +174,18 @@
                     audio.src = "https://radios.yanapak.org/cecap";
                     audio.play();
                     tituloRadio.innerText = "Radio CECAP Rivera";
-                    subtituloRadio.innerText = "Transmitiendo en vivo...";
-                }).catch(() => console.log("Vivo offline"));
+                    subtituloRadio.innerText = "Transmitiendo en vivo desde Rivera, Uruguay";
+                }).catch(() => console.log("Vivo offline, AutoDJ continúa..."));
             }
         }, 20000);
 
+        // --- SISTEMA DE OYENTES MEJORADO ---
         async function gestionarOyente() {
             const ref = await db.collection("oyentes_activos").add({ t: Date.now() });
+            
+            // Atrapamos varios eventos para asegurar que se borre al cerrar
+            window.addEventListener('beforeunload', () => ref.delete());
+            window.addEventListener('pagehide', () => ref.delete());
             window.addEventListener('unload', () => ref.delete());
         }
         db.collection("oyentes_activos").onSnapshot(snap => numOyentesElemento.innerText = snap.size);
