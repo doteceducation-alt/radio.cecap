@@ -46,7 +46,7 @@
             <div class="bar"></div><div class="bar"></div>
         </div>
 
-        <audio id="radioStream" src="https://radios.yanapak.org/cecap" preload="none"></audio>
+        <audio id="radioStream" src="https://giss.tv:667/cecap.mp3" preload="none"></audio>
 
         <button id="playBtn">▶️ Escuchar</button>
 
@@ -103,13 +103,11 @@
         let cancionActualIndex = -1;
         let autoDjActivo = false;
 
-        // Cargar canciones en tiempo real
         db.collection("playlist_emergencia").where("activa", "==", true).onSnapshot((snap) => {
             playlist = [];
             snap.forEach((doc) => playlist.push(doc.data()));
         });
 
-        // Reproducir una canción al azar sin repetir la última
         function reproducirAleatoria() {
             if (playlist.length === 0) return;
 
@@ -134,7 +132,6 @@
             }).catch(err => console.log("Error en AutoDJ:", err));
         }
 
-        // Cuando la canción termina, saltar a la siguiente aleatoria
         audio.addEventListener('ended', () => {
             if (autoDjActivo) {
                 reproducirAleatoria();
@@ -150,7 +147,6 @@
                     tituloRadio.innerText = "Radio CECAP Rivera";
                     subtituloRadio.innerText = "Transmitiendo en vivo desde Rivera, Uruguay";
                 }).catch(() => {
-                    // Si falla el streaming en vivo, salta el AutoDJ aleatorio
                     if(playlist.length > 0) reproducirAleatoria();
                 });
             } else {
@@ -162,16 +158,18 @@
 
         volumeSlider.addEventListener('input', (e) => audio.volume = e.target.value);
 
-        // Verificador de retorno de señal en vivo (cada 20 segundos)
+        // --- VERIFICADOR DE SEÑAL GISS.TV ---
         setInterval(() => {
             if (autoDjActivo) {
-                let test = new Audio("https://radios.yanapak.org/cecap?nc=" + Date.now());
+                // URL DE GISS.TV ACTUALIZADA AQUÍ TAMBIÉN
+                let test = new Audio("https://giss.tv:667/cecap.mp3?nc=" + Date.now());
                 test.volume = 0;
                 test.play().then(() => {
                     autoDjActivo = false;
                     test.pause();
                     audio.pause();
-                    audio.src = "https://radios.yanapak.org/cecap";
+                    // URL DE GISS.TV ACTUALIZADA AQUÍ TAMBIÉN
+                    audio.src = "https://giss.tv:667/cecap.mp3";
                     audio.play();
                     tituloRadio.innerText = "Radio CECAP Rivera";
                     subtituloRadio.innerText = "Transmitiendo en vivo desde Rivera, Uruguay";
@@ -182,8 +180,6 @@
         // --- SISTEMA DE OYENTES MEJORADO ---
         async function gestionarOyente() {
             const ref = await db.collection("oyentes_activos").add({ t: Date.now() });
-            
-            // Atrapamos varios eventos para asegurar que se borre al cerrar
             window.addEventListener('beforeunload', () => ref.delete());
             window.addEventListener('pagehide', () => ref.delete());
             window.addEventListener('unload', () => ref.delete());
