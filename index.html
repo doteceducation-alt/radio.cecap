@@ -39,7 +39,7 @@
              onclick="accesoAdmin()">
         
         <h1>Radio CECAP Rivera</h1>
-        <p id="subtitulo">Transmitiendo en vivo desde Rivera, Uruguay</p>
+        <p id="subtitulo">Haz clic en ▶️ Escuchar para conectar</p>
 
         <div class="visualizer" id="visualizer">
             <div class="bar"></div><div class="bar"></div><div class="bar"></div>
@@ -109,7 +109,11 @@
         });
 
         function reproducirAleatoria() {
-            if (playlist.length === 0) return;
+            if (playlist.length === 0) {
+                tituloRadio.innerText = "Radio Fuera de Línea";
+                subtituloRadio.innerText = "No hay canciones de emergencia disponibles.";
+                return;
+            }
 
             let nuevoIndex;
             if (playlist.length > 1) {
@@ -126,6 +130,7 @@
             audio.src = cancion.url_audio;
             audio.play().then(() => {
                 autoDjActivo = true;
+                playBtn.innerHTML = '⏸️ Pausar';
                 visualizer.classList.add('active');
                 tituloRadio.innerText = "AutoDJ Activado 🔀";
                 subtituloRadio.innerText = "🎶 " + cancion.titulo + " - " + cancion.artista;
@@ -138,41 +143,67 @@
             }
         });
 
-        // --- CONTROL PRINCIPAL ---
+        // --- CONTROL PRINCIPAL CON BYPASS RÁPIDO ---
         playBtn.addEventListener('click', () => {
             if (audio.paused) {
-                audio.play().then(() => {
-                    playBtn.innerHTML = '⏸️ Pausar';
-                    visualizer.classList.add('active');
-                    tituloRadio.innerText = "Radio CECAP Rivera";
-                    subtituloRadio.innerText = "Transmitiendo en vivo desde Rivera, Uruguay";
+                playBtn.innerHTML = '⏳ Conectando...';
+                
+                // Creamos un audio fantasma para probar la conexión en vivo sin trancar la página
+                let testVivo = new Audio("https://giss.tv:667/cecap.mp3?nc=" + Date.now());
+                testVivo.volume = 0;
+
+                // Temporizador de 3 segundos (Fast Fail)
+                let timeoutBypass = setTimeout(() => {
+                    testVivo.pause();
+                    testVivo.src = "";
+                    if(playlist.length > 0) reproducirAleatoria();
+                }, 3000);
+
+                testVivo.play().then(() => {
+                    // Si responde rápido, cancelamos el bypass y conectamos el vivo real
+                    clearTimeout(timeoutBypass);
+                    testVivo.pause();
+                    testVivo.src = "";
+                    
+                    autoDjActivo = false;
+                    audio.src = "https://giss.tv:667/cecap.mp3";
+                    audio.play().then(() => {
+                        playBtn.innerHTML = '⏸️ Pausar';
+                        visualizer.classList.add('active');
+                        tituloRadio.innerText = "Radio CECAP Rivera";
+                        subtituloRadio.innerText = "🔴 Transmitiendo en vivo desde Rivera, Uruguay";
+                    });
                 }).catch(() => {
+                    // Si tira error al instante
+                    clearTimeout(timeoutBypass);
                     if(playlist.length > 0) reproducirAleatoria();
                 });
+
             } else {
                 audio.pause();
                 playBtn.innerHTML = '▶️ Escuchar';
                 visualizer.classList.remove('active');
+                tituloRadio.innerText = "Radio CECAP Rivera";
+                subtituloRadio.innerText = "Transmisión pausada";
             }
         });
 
         volumeSlider.addEventListener('input', (e) => audio.volume = e.target.value);
 
-        // --- VERIFICADOR DE SEÑAL GISS.TV ---
+        // --- VERIFICADOR DE RETORNO DE SEÑAL GISS.TV ---
         setInterval(() => {
             if (autoDjActivo) {
-                // URL DE GISS.TV ACTUALIZADA AQUÍ TAMBIÉN
                 let test = new Audio("https://giss.tv:667/cecap.mp3?nc=" + Date.now());
                 test.volume = 0;
                 test.play().then(() => {
                     autoDjActivo = false;
                     test.pause();
                     audio.pause();
-                    // URL DE GISS.TV ACTUALIZADA AQUÍ TAMBIÉN
                     audio.src = "https://giss.tv:667/cecap.mp3";
                     audio.play();
+                    playBtn.innerHTML = '⏸️ Pausar';
                     tituloRadio.innerText = "Radio CECAP Rivera";
-                    subtituloRadio.innerText = "Transmitiendo en vivo desde Rivera, Uruguay";
+                    subtituloRadio.innerText = "🔴 Transmitiendo en vivo desde Rivera, Uruguay";
                 }).catch(() => console.log("Vivo offline, AutoDJ continúa..."));
             }
         }, 20000);
