@@ -10,7 +10,8 @@
         h2 { color: #00d2ff; text-align: center; border-bottom: 2px solid #444; padding-bottom: 10px; }
         h3 { color: #ffeb3b; margin-bottom: 10px; }
         .card { background: #3d3d3d; padding: 20px; margin-bottom: 20px; border-radius: 10px; }
-        input[type="text"], input[type="file"] { width: 100%; padding: 12px; margin: 8px 0; box-sizing: border-box; border-radius: 6px; border: none; background: #555; color: white; }
+        /* Se agregó 'select' a esta regla para que luzca igual que los campos de texto */
+        input[type="text"], input[type="file"], select { width: 100%; padding: 12px; margin: 8px 0; box-sizing: border-box; border-radius: 6px; border: none; background: #555; color: white; font-size: 14px; }
         button { background: #00d2ff; color: #000; border: none; padding: 12px 20px; cursor: pointer; border-radius: 6px; font-weight: bold; width: 100%; margin-top: 10px; transition: 0.3s; }
         button:hover { background: #0099cc; }
         button.danger { background: #ff4444; color: white; margin-top: 5px; }
@@ -23,14 +24,12 @@
     <div class="admin-container">
         <h2>⚙️ Panel de Control</h2>
 
-        <!-- CONTROL DE OYENTES FANTASMAS -->
         <div class="card">
             <h3>👥 Oyentes Activos</h3>
             <p style="font-size: 14px; color: #ccc;">Si la transmisión terminó pero el contador sigue marcando gente, bórralo aquí:</p>
             <button class="danger" onclick="limpiarOyentes()">🧹 Resetear Contador a 0</button>
         </div>
 
-        <!-- SUBIR CANCIÓN -->
         <div class="card">
             <h3>🎵 Subir al AutoDJ</h3>
             <input type="text" id="titulo" placeholder="Título de la canción">
@@ -39,79 +38,34 @@
             <button onclick="subirCancion()" id="btnSubir">⬆️ Subir y Guardar</button>
             <p id="estadoSubida" style="color: #00d2ff; font-size: 14px; display: none; text-align: center; margin-top: 10px;">Subiendo a la nube... por favor espera ⏳</p>
         </div>
-        <!-- GESTOR DE PROGRAMACIÓN -->
-<div style="background: #f4f4f4; padding: 20px; border-radius: 10px; margin-top: 20px; color: black;">
-    <h3>📅 Gestionar Grilla de Programación</h3>
-    
-    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-        <select id="diaProg" style="padding: 5px;">
-            <option value="Lunes" data-orden="1">Lunes</option>
-            <option value="Martes" data-orden="2">Martes</option>
-            <option value="Miércoles" data-orden="3">Miércoles</option>
-            <option value="Jueves" data-orden="4">Jueves</option>
-            <option value="Viernes" data-orden="5">Viernes</option>
-            <option value="Sábado" data-orden="6">Sábado</option>
-            <option value="Domingo" data-orden="7">Domingo</option>
-        </select>
-        <input type="text" id="horarioProg" placeholder="Ej: 14:00 a 16:00" style="padding: 5px; flex: 1;">
-        <input type="text" id="nombreProg" placeholder="Nombre del Programa o Locutor" style="padding: 5px; flex: 2;">
-        <button onclick="agregarPrograma()" style="background: #4CAF50; color: white; border: none; padding: 5px 15px; cursor: pointer; border-radius: 5px;">Agregar</button>
-    </div>
 
-    <ul id="adminListaGrilla" style="list-style: none; padding: 0;">
-        <!-- Aquí se cargarán los programas para borrarlos -->
-    </ul>
-</div>
+        <div class="card">
+            <h3>📅 Gestionar Grilla</h3>
+            
+            <label style="font-size: 14px; color: #ccc; font-weight: bold;">Día de la semana:</label>
+            <select id="diaProg">
+                <option value="Lunes" data-orden="1">Lunes</option>
+                <option value="Martes" data-orden="2">Martes</option>
+                <option value="Miércoles" data-orden="3">Miércoles</option>
+                <option value="Jueves" data-orden="4">Jueves</option>
+                <option value="Viernes" data-orden="5">Viernes</option>
+                <option value="Sábado" data-orden="6">Sábado</option>
+                <option value="Domingo" data-orden="7">Domingo</option>
+            </select>
+            
+            <label style="font-size: 14px; color: #ccc; font-weight: bold;">Horario del programa:</label>
+            <input type="text" id="horarioProg" placeholder="Ej: 14:00 a 16:00">
+            
+            <label style="font-size: 14px; color: #ccc; font-weight: bold;">Nombre del Programa o Locutor:</label>
+            <input type="text" id="nombreProg" placeholder="Ej: Voces de la Comunidad">
+            
+            <button onclick="agregarPrograma()" style="background: #4CAF50; color: white;">➕ Agregar a la Grilla</button>
 
-<script>
-    // Funciones para el panel de administración
-    function agregarPrograma() {
-        const selectDia = document.getElementById("diaProg");
-        const dia = selectDia.value;
-        const orden = parseInt(selectDia.options[selectDia.selectedIndex].getAttribute("data-orden"));
-        const horario = document.getElementById("horarioProg").value;
-        const nombre = document.getElementById("nombreProg").value;
-        
-        if(!horario || !nombre) {
-            alert("⚠️ Por favor, completa el horario y el nombre del programa.");
-            return;
-        }
-        
-        // Guardar en Firebase
-        db.collection("programacion").add({
-            dia: dia,
-            ordenDia: orden,
-            horario: horario,
-            nombre: nombre
-        }).then(() => {
-            document.getElementById("horarioProg").value = "";
-            document.getElementById("nombreProg").value = "";
-        });
-    }
+            <h4 style="margin-top: 25px; margin-bottom: 10px; border-bottom: 1px solid #555; padding-bottom: 5px; color: #00d2ff;">📋 Programas en cartelera:</h4>
+            <ul id="adminListaGrilla" style="list-style: none; padding: 0; margin: 0;">
+                </ul>
+        </div>
 
-    function borrarPrograma(id) {
-        if(confirm("¿Seguro que quieres borrar este programa de la grilla?")) {
-            db.collection("programacion").doc(id).delete();
-        }
-    }
-
-    // Leer los programas en el admin para poder borrarlos
-    db.collection("programacion").orderBy("ordenDia").orderBy("horario").onSnapshot((snap) => {
-        const adminLista = document.getElementById('adminListaGrilla');
-        adminLista.innerHTML = '';
-        snap.forEach(doc => {
-            const p = doc.data();
-            adminLista.innerHTML += `
-                <li style="background: white; padding: 10px; margin-bottom: 5px; border-radius: 5px; display: flex; justify-content: space-between; border: 1px solid #ccc;">
-                    <span><strong>${p.dia} ${p.horario}:</strong> ${p.nombre}</span>
-                    <button onclick="borrarPrograma('${doc.id}')" style="background: red; color: white; border: none; cursor: pointer; border-radius: 3px;">❌ Borrar</button>
-                </li>
-            `;
-        });
-    });
-</script>
-
-        <!-- PLAYLIST -->
         <div class="card">
             <h3>📋 Playlist de Emergencia</h3>
             <div id="listaCanciones">Cargando canciones...</div>
@@ -120,7 +74,6 @@
         <button class="volver" onclick="window.location.href='index.html'">⬅️ Volver a la Radio</button>
     </div>
 
-    <!-- FIREBASE (Se agregó Storage) -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
@@ -191,7 +144,7 @@
             }
         }
 
-        // 3. MOSTRAR PLAYLIST
+        // 3. MOSTRAR PLAYLIST DE EMERGENCIA
         db.collection("playlist_emergencia").orderBy("orden").onSnapshot((snapshot) => {
             const lista = document.getElementById('listaCanciones');
             lista.innerHTML = "";
@@ -216,6 +169,56 @@
                 await db.collection("playlist_emergencia").doc(id).delete();
             }
         }
+
+        // 5. AGREGAR PROGRAMA A LA GRILLA
+        function agregarPrograma() {
+            const selectDia = document.getElementById("diaProg");
+            const dia = selectDia.value;
+            const orden = parseInt(selectDia.options[selectDia.selectedIndex].getAttribute("data-orden"));
+            const horario = document.getElementById("horarioProg").value;
+            const nombre = document.getElementById("nombreProg").value;
+            
+            if(!horario || !nombre) {
+                alert("⚠️ Por favor, completa el horario y el nombre del programa.");
+                return;
+            }
+            
+            db.collection("programacion").add({
+                dia: dia,
+                ordenDia: orden,
+                horario: horario,
+                nombre: nombre
+            }).then(() => {
+                document.getElementById("horarioProg").value = "";
+                document.getElementById("nombreProg").value = "";
+            });
+        }
+
+        // 6. BORRAR PROGRAMA DE LA GRILLA
+        function borrarPrograma(id) {
+            if(confirm("¿Seguro que quieres borrar este programa de la grilla?")) {
+                db.collection("programacion").doc(id).delete();
+            }
+        }
+
+        // 7. MOSTRAR LISTA DE PROGRAMAS EN EL ADMIN
+        db.collection("programacion").orderBy("ordenDia").orderBy("horario").onSnapshot((snap) => {
+            const adminLista = document.getElementById('adminListaGrilla');
+            adminLista.innerHTML = '';
+            if (snap.empty) {
+                adminLista.innerHTML = "<p style='color: #aaa; font-size: 14px;'>No hay programas configurados.</p>";
+                return;
+            }
+            snap.forEach(doc => {
+                const p = doc.data();
+                adminLista.innerHTML += `
+                    <li class="song-item">
+                        <span style="font-size: 14px;"><strong>${p.dia} (${p.horario}):</strong> ${p.nombre}</span>
+                        <button class="danger" style="width: auto; margin: 0; padding: 6px 12px;" onclick="borrarPrograma('${doc.id}')">❌ Borrar</button>
+                    </li>
+                `;
+            });
+        });
     </script>
 </body>
 </html>
