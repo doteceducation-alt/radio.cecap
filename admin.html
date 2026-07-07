@@ -15,7 +15,7 @@
         button:hover { background: #0099cc; }
         button.danger { background: #ff4444; color: white; margin-top: 5px; }
         button.danger:hover { background: #cc0000; }
-        .song-item { display: flex; justify-content: space-between; align-items: center; background: #555; padding: 10px 15px; margin-top: 8px; border-radius: 8px; }
+        .song-item { display: flex; justify-content: space-between; align-items: center; background: #555; padding: 10px 15px; margin-top: 8px; border-radius: 8px; gap: 10px; }
         .volver { background: #777; color: white; }
         
         /* Estilos de alta visibilidad exclusivos para la grilla de programación */
@@ -27,6 +27,11 @@
         }
         .input-grilla::placeholder {
             color: #666 !important;
+        }
+        /* Contenedor para botones de edición */
+        .acciones-item {
+            display: flex;
+            gap: 5px;
         }
     </style>
 </head>
@@ -69,7 +74,10 @@
             <label style="font-size: 14px; color: #ffeb3b; font-weight: bold; display: block; margin-top: 10px;">3. Nombre del Programa o Tallerista:</label>
             <input type="text" id="nombreProg" class="input-grilla" placeholder="Ej: Proyecto Robótica Grupo 4">
             
-            <button onclick="agregarPrograma()" style="background: #4CAF50; color: white; margin-top: 15px;">➕ Agregar a la Grilla</button>
+            <div style="display: flex; gap: 10px;">
+                <button id="btnGuardarProg" onclick="guardarPrograma()" style="background: #4CAF50; color: white; margin-top: 15px;">➕ Agregar a la Grilla</button>
+                <button id="btnCancelarEdicion" onclick="cancelarEdicion()" style="background: #777; color: white; margin-top: 15px; display: none; width: auto;">❌ Cancelar</button>
+            </div>
 
             <h4 style="margin-top: 25px; margin-bottom: 10px; border-bottom: 1px solid #555; padding-bottom: 5px; color: #00d2ff;">📋 Programas en cartelera:</h4>
             <ul id="adminListaGrilla" style="list-style: none; padding: 0; margin: 0;">
@@ -180,8 +188,10 @@
             }
         }
 
-        // 5. AGREGAR PROGRAMA A LA GRILLA
-        function agregarPrograma() {
+        // --- SISTEMA DE GESTIÓN DE GRILLA (CREAR, EDITAR Y BORRAR) ---
+        let programaEditandoId = null;
+
+        function guardarPrograma() {
             const selectDia = document.getElementById("diaProg");
             const dia = selectDia.value;
             const orden = parseInt(selectDia.options[selectDia.selectedIndex].getAttribute("data-orden"));
@@ -192,26 +202,75 @@
                 alert("⚠️ Por favor, completa el horario y el nombre del programa.");
                 return;
             }
-            
-            db.collection("programacion").add({
+
+            const datosPrograma = {
                 dia: dia,
                 ordenDia: orden,
                 horario: horario,
                 nombre: nombre
-            }).then(() => {
-                document.getElementById("horarioProg").value = "";
-                document.getElementById("nombreProg").value = "";
-            });
-        }
-
-        // 6. BORRAR PROGRAMA DE LA GRILLA
-        function borrarPrograma(id) {
-            if(confirm("¿Seguro que quieres borrar este programa de la grilla?")) {
-                db.collection("programacion").doc(id).delete();
+            };
+            
+            if (programaEditandoId) {
+                // Modo Edición: Actualizar registro existente
+                db.collection("programacion").doc(programaEditandoId).update(datosPrograma)
+                .then(() => {
+                    cancelarEdicion();
+                }).catch(err => console.log("Error al editar:", err));
+            } else {
+                // Modo Creación: Agregar nuevo registro
+                db.collection("programacion").add(datosPrograma)
+                .then(() => {
+                    document.getElementById("horarioProg").value = "";
+                    document.getElementById("nombreProg").value = "";
+                }).catch(err => console.log("Error al agregar:", err));
             }
         }
 
-        // 7. MOSTRAR LISTA DE PROGRAMAS EN EL ADMIN
+        function cargarParaEditar(id, dia, horario, nombre) {
+            // Llenar las cajas de texto con los datos actuales
+            document.getElementById("diaProg").value = dia;
+            document.getElementById("horarioProg").value = horario;
+            document.getElementById("nombreProg").value = nombre;
+            
+            // Guardar el ID del programa que se está editando
+            programaEditandoId = id;
+            
+            // Cambiar la apariencia del botón
+            const btnGuardar = document.getElementById("btnGuardarProg");
+            btnGuardar.innerHTML = "💾 Guardar Cambios";
+            btnGuardar.style.background = "#ff9800"; // Naranja para resaltar
+            
+            // Mostrar botón cancelar
+            document.getElementById("btnCancelarEdicion").style.display = "block";
+            
+            // Hacer scroll suave hacia arriba para ver el formulario
+            document.getElementById("diaProg").scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function cancelarEdicion() {
+            programaEditandoId = null;
+            document.getElementById("horarioProg").value = "";
+            document.getElementById("nombreProg").value = "";
+            
+            // Restaurar botones a su estado original
+            const btnGuardar = document.getElementById("btnGuardarProg");
+            btnGuardar.innerHTML = "➕ Agregar a la Grilla";
+            btnGuardar.style.background = "#4CAF50";
+            
+            document.getElementById("btnCancelarEdicion").style.display = "none";
+        }
+
+        function borrarPrograma(id) {
+            if(confirm("¿Seguro que quieres borrar este programa de la grilla?")) {
+                db.collection("programacion").doc(id).delete();
+                // Si justo lo estábamos editando, cancelamos la edición
+                if (programaEditandoId === id) {
+                    cancelarEdicion();
+                }
+            }
+        }
+
+        // MOSTRAR LISTA DE PROGRAMAS EN EL ADMIN
         db.collection("programacion").orderBy("ordenDia").orderBy("horario").onSnapshot((snap) => {
             const adminLista = document.getElementById('adminListaGrilla');
             adminLista.innerHTML = '';
@@ -223,8 +282,11 @@
                 const p = doc.data();
                 adminLista.innerHTML += `
                     <li class="song-item">
-                        <span style="font-size: 14px;"><strong>${p.dia} (${p.horario}):</strong> ${p.nombre}</span>
-                        <button class="danger" style="width: auto; margin: 0; padding: 6px 12px;" onclick="borrarPrograma('${doc.id}')">❌ Borrar</button>
+                        <span style="font-size: 14px; flex: 1;"><strong>${p.dia} (${p.horario}):</strong> ${p.nombre}</span>
+                        <div class="acciones-item">
+                            <button style="background: #ff9800; color: white; border: none; padding: 6px 12px; cursor: pointer; border-radius: 3px; font-weight: bold; width: auto; margin: 0;" onclick="cargarParaEditar('${doc.id}', '${p.dia}', '${p.horario}', '${p.nombre}')">✏️ Editar</button>
+                            <button class="danger" style="width: auto; margin: 0; padding: 6px 12px;" onclick="borrarPrograma('${doc.id}')">❌ Borrar</button>
+                        </div>
                     </li>
                 `;
             });
