@@ -10,7 +10,6 @@
         h2 { color: #00d2ff; text-align: center; border-bottom: 2px solid #444; padding-bottom: 10px; }
         h3 { color: #ffeb3b; margin-bottom: 10px; }
         .card { background: #3d3d3d; padding: 20px; margin-bottom: 20px; border-radius: 10px; }
-        /* Se agregó 'select' a esta regla para que luzca igual que los campos de texto */
         input[type="text"], input[type="file"], select { width: 100%; padding: 12px; margin: 8px 0; box-sizing: border-box; border-radius: 6px; border: none; background: #555; color: white; font-size: 14px; }
         button { background: #00d2ff; color: #000; border: none; padding: 12px 20px; cursor: pointer; border-radius: 6px; font-weight: bold; width: 100%; margin-top: 10px; transition: 0.3s; }
         button:hover { background: #0099cc; }
@@ -18,6 +17,17 @@
         button.danger:hover { background: #cc0000; }
         .song-item { display: flex; justify-content: space-between; align-items: center; background: #555; padding: 10px 15px; margin-top: 8px; border-radius: 8px; }
         .volver { background: #777; color: white; }
+        
+        /* Estilos de alta visibilidad exclusivos para la grilla de programación */
+        .input-grilla {
+            background: white !important;
+            color: black !important;
+            border: 2px solid #00d2ff !important;
+            font-weight: 500 !important;
+        }
+        .input-grilla::placeholder {
+            color: #666 !important;
+        }
     </style>
 </head>
 <body>
@@ -40,10 +50,10 @@
         </div>
 
         <div class="card">
-            <h3>📅 Gestionar Grilla</h3>
+            <h3>📅 Gestionar Grilla de Programación</h3>
             
-            <label style="font-size: 14px; color: #ccc; font-weight: bold;">Día de la semana:</label>
-            <select id="diaProg">
+            <label style="font-size: 14px; color: #ffeb3b; font-weight: bold; display: block; margin-top: 10px;">1. Selecciona el Día:</label>
+            <select id="diaProg" class="input-grilla">
                 <option value="Lunes" data-orden="1">Lunes</option>
                 <option value="Martes" data-orden="2">Martes</option>
                 <option value="Miércoles" data-orden="3">Miércoles</option>
@@ -53,13 +63,13 @@
                 <option value="Domingo" data-orden="7">Domingo</option>
             </select>
             
-            <label style="font-size: 14px; color: #ccc; font-weight: bold;">Horario del programa:</label>
-            <input type="text" id="horarioProg" placeholder="Ej: 14:00 a 16:00">
+            <label style="font-size: 14px; color: #ffeb3b; font-weight: bold; display: block; margin-top: 10px;">2. Escribe el Horario:</label>
+            <input type="text" id="horarioProg" class="input-grilla" placeholder="Ej: 14:00 a 16:00">
             
-            <label style="font-size: 14px; color: #ccc; font-weight: bold;">Nombre del Programa o Locutor:</label>
-            <input type="text" id="nombreProg" placeholder="Ej: Voces de la Comunidad">
+            <label style="font-size: 14px; color: #ffeb3b; font-weight: bold; display: block; margin-top: 10px;">3. Nombre del Programa o Tallerista:</label>
+            <input type="text" id="nombreProg" class="input-grilla" placeholder="Ej: Proyecto Robótica Grupo 4">
             
-            <button onclick="agregarPrograma()" style="background: #4CAF50; color: white;">➕ Agregar a la Grilla</button>
+            <button onclick="agregarPrograma()" style="background: #4CAF50; color: white; margin-top: 15px;">➕ Agregar a la Grilla</button>
 
             <h4 style="margin-top: 25px; margin-bottom: 10px; border-bottom: 1px solid #555; padding-bottom: 5px; color: #00d2ff;">📋 Programas en cartelera:</h4>
             <ul id="adminListaGrilla" style="list-style: none; padding: 0; margin: 0;">
