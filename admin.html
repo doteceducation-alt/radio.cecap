@@ -270,22 +270,42 @@
             }
         }
 
-        // MOSTRAR LISTA DE PROGRAMAS EN EL ADMIN
-        db.collection("programacion").orderBy("ordenDia").orderBy("horario").onSnapshot((snap) => {
+       // MOSTRAR LISTA DE PROGRAMAS EN EL ADMIN (CON ORDENAMIENTO JS)
+        db.collection("programacion").onSnapshot((snap) => {
             const adminLista = document.getElementById('adminListaGrilla');
             adminLista.innerHTML = '';
+            
             if (snap.empty) {
                 adminLista.innerHTML = "<p style='color: #aaa; font-size: 14px;'>No hay programas configurados.</p>";
                 return;
             }
+            
+            let programas = [];
             snap.forEach(doc => {
-                const p = doc.data();
+                let data = doc.data();
+                data.id = doc.id; // Guardamos el ID internamente
+                programas.push(data);
+            });
+            
+            // Ordenamos por día y hora de forma segura
+            programas.sort((a, b) => {
+                let ordenA = a.ordenDia || 1;
+                let ordenB = b.ordenDia || 1;
+                if (ordenA !== ordenB) {
+                    return ordenA - ordenB;
+                }
+                let horaA = a.horario || "";
+                let horaB = b.horario || "";
+                return horaA.localeCompare(horaB);
+            });
+
+            programas.forEach(p => {
                 adminLista.innerHTML += `
                     <li class="song-item">
                         <span style="font-size: 14px; flex: 1;"><strong>${p.dia} (${p.horario}):</strong> ${p.nombre}</span>
                         <div class="acciones-item">
-                            <button style="background: #ff9800; color: white; border: none; padding: 6px 12px; cursor: pointer; border-radius: 3px; font-weight: bold; width: auto; margin: 0;" onclick="cargarParaEditar('${doc.id}', '${p.dia}', '${p.horario}', '${p.nombre}')">✏️ Editar</button>
-                            <button class="danger" style="width: auto; margin: 0; padding: 6px 12px;" onclick="borrarPrograma('${doc.id}')">❌ Borrar</button>
+                            <button style="background: #ff9800; color: white; border: none; padding: 6px 12px; cursor: pointer; border-radius: 3px; font-weight: bold; width: auto; margin: 0;" onclick="cargarParaEditar('${p.id}', '${p.dia}', '${p.horario}', '${p.nombre}')">✏️ Editar</button>
+                            <button class="danger" style="width: auto; margin: 0; padding: 6px 12px;" onclick="borrarPrograma('${p.id}')">❌ Borrar</button>
                         </div>
                     </li>
                 `;
