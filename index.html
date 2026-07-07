@@ -258,17 +258,30 @@
         db.collection("oyentes_activos").onSnapshot(snap => numOyentesElemento.innerText = snap.size);
         gestionarOyente();
 
-        // --- SISTEMA DE GRILLA DE PROGRAMACIÓN ---
+        // --- SISTEMA DE GRILLA DE PROGRAMACIÓN (CON ORDENAMIENTO JS) ---
         const listaGrilla = document.getElementById('listaGrilla');
         
-        db.collection("programacion").orderBy("ordenDia").orderBy("horario").onSnapshot((snap) => {
+        db.collection("programacion").onSnapshot((snap) => {
             listaGrilla.innerHTML = '';
             if (snap.empty) {
                 listaGrilla.innerHTML = '<li>Aún no hay programas anunciados. ¡Próximamente!</li>';
                 return;
             }
-            snap.forEach((doc) => {
-                const prog = doc.data();
+            
+            // Convertimos los datos de Firebase a un formato que podamos ordenar localmente
+            let programas = [];
+            snap.forEach((doc) => programas.push(doc.data()));
+            
+            // Ordenamos primero por el número de día (1 al 7) y luego por horario
+            programas.sort((a, b) => {
+                if (a.ordenDia !== b.ordenDia) {
+                    return a.ordenDia - b.ordenDia;
+                }
+                return a.horario.localeCompare(b.horario);
+            });
+
+            // Mostramos los programas ordenados
+            programas.forEach((prog) => {
                 listaGrilla.innerHTML += `
                     <li>
                         <span class="grilla-dia-hora">${prog.dia} | ${prog.horario}</span>
