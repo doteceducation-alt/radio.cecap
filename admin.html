@@ -39,6 +39,77 @@
             <button onclick="subirCancion()" id="btnSubir">⬆️ Subir y Guardar</button>
             <p id="estadoSubida" style="color: #00d2ff; font-size: 14px; display: none; text-align: center; margin-top: 10px;">Subiendo a la nube... por favor espera ⏳</p>
         </div>
+        <!-- GESTOR DE PROGRAMACIÓN -->
+<div style="background: #f4f4f4; padding: 20px; border-radius: 10px; margin-top: 20px; color: black;">
+    <h3>📅 Gestionar Grilla de Programación</h3>
+    
+    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+        <select id="diaProg" style="padding: 5px;">
+            <option value="Lunes" data-orden="1">Lunes</option>
+            <option value="Martes" data-orden="2">Martes</option>
+            <option value="Miércoles" data-orden="3">Miércoles</option>
+            <option value="Jueves" data-orden="4">Jueves</option>
+            <option value="Viernes" data-orden="5">Viernes</option>
+            <option value="Sábado" data-orden="6">Sábado</option>
+            <option value="Domingo" data-orden="7">Domingo</option>
+        </select>
+        <input type="text" id="horarioProg" placeholder="Ej: 14:00 a 16:00" style="padding: 5px; flex: 1;">
+        <input type="text" id="nombreProg" placeholder="Nombre del Programa o Locutor" style="padding: 5px; flex: 2;">
+        <button onclick="agregarPrograma()" style="background: #4CAF50; color: white; border: none; padding: 5px 15px; cursor: pointer; border-radius: 5px;">Agregar</button>
+    </div>
+
+    <ul id="adminListaGrilla" style="list-style: none; padding: 0;">
+        <!-- Aquí se cargarán los programas para borrarlos -->
+    </ul>
+</div>
+
+<script>
+    // Funciones para el panel de administración
+    function agregarPrograma() {
+        const selectDia = document.getElementById("diaProg");
+        const dia = selectDia.value;
+        const orden = parseInt(selectDia.options[selectDia.selectedIndex].getAttribute("data-orden"));
+        const horario = document.getElementById("horarioProg").value;
+        const nombre = document.getElementById("nombreProg").value;
+        
+        if(!horario || !nombre) {
+            alert("⚠️ Por favor, completa el horario y el nombre del programa.");
+            return;
+        }
+        
+        // Guardar en Firebase
+        db.collection("programacion").add({
+            dia: dia,
+            ordenDia: orden,
+            horario: horario,
+            nombre: nombre
+        }).then(() => {
+            document.getElementById("horarioProg").value = "";
+            document.getElementById("nombreProg").value = "";
+        });
+    }
+
+    function borrarPrograma(id) {
+        if(confirm("¿Seguro que quieres borrar este programa de la grilla?")) {
+            db.collection("programacion").doc(id).delete();
+        }
+    }
+
+    // Leer los programas en el admin para poder borrarlos
+    db.collection("programacion").orderBy("ordenDia").orderBy("horario").onSnapshot((snap) => {
+        const adminLista = document.getElementById('adminListaGrilla');
+        adminLista.innerHTML = '';
+        snap.forEach(doc => {
+            const p = doc.data();
+            adminLista.innerHTML += `
+                <li style="background: white; padding: 10px; margin-bottom: 5px; border-radius: 5px; display: flex; justify-content: space-between; border: 1px solid #ccc;">
+                    <span><strong>${p.dia} ${p.horario}:</strong> ${p.nombre}</span>
+                    <button onclick="borrarPrograma('${doc.id}')" style="background: red; color: white; border: none; cursor: pointer; border-radius: 3px;">❌ Borrar</button>
+                </li>
+            `;
+        });
+    });
+</script>
 
         <!-- PLAYLIST -->
         <div class="card">
