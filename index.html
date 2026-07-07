@@ -6,42 +6,6 @@
     <title>Radio CECAP Rivera</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Estilos para la Grilla de Programación */
-.grilla-section {
-    margin-top: 20px;
-    padding: 15px;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 15px;
-    text-align: left;
-    color: white;
-}
-.grilla-section h3 {
-    text-align: center;
-    margin-top: 0;
-    margin-bottom: 15px;
-    font-size: 18px;
-    border-bottom: 1px solid rgba(255,255,255,0.2);
-    padding-bottom: 10px;
-}
-.grilla-lista {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-.grilla-lista li {
-    background: rgba(255, 255, 255, 0.1);
-    margin-bottom: 8px;
-    padding: 10px;
-    border-radius: 8px;
-    font-size: 14px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-.grilla-dia-hora {
-    font-weight: bold;
-    color: #4CAF50; /* Un verde vibrante para resaltar */
-}
         /* Ajuste para el QR */
         .qr-section {
             margin-top: 30px;
@@ -65,6 +29,43 @@
             line-height: 1.2;
             color: white;
             font-weight: bold;
+        }
+
+        /* Estilos para la Grilla de Programación */
+        .grilla-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            text-align: left;
+            color: white;
+        }
+        .grilla-section h3 {
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 18px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            padding-bottom: 10px;
+        }
+        .grilla-lista {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .grilla-lista li {
+            background: rgba(255, 255, 255, 0.1);
+            margin-bottom: 8px;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .grilla-dia-hora {
+            font-weight: bold;
+            color: #4CAF50;
         }
     </style>
 </head>
@@ -101,13 +102,13 @@
             <div class="qr-text">
                 ¡ESCANEA Y<br>COMPARTE LA<br>RADIO DE CECAP!
             </div>
-            <!-- SECCIÓN GRILLA DE PROGRAMACIÓN -->
+        </div>
+
         <div class="grilla-section">
             <h3>📅 Programación de la Semana</h3>
             <ul class="grilla-lista" id="listaGrilla">
                 <li>Cargando programación...</li>
             </ul>
-        </div>
         </div>
     </div>
 
@@ -191,11 +192,9 @@
             if (audio.paused) {
                 playBtn.innerHTML = '⏳ Conectando...';
                 
-                // Creamos un audio fantasma para probar la conexión en vivo sin trancar la página
                 let testVivo = new Audio("https://giss.tv:667/cecap.mp3?nc=" + Date.now());
                 testVivo.volume = 0;
 
-                // Temporizador de 3 segundos (Fast Fail)
                 let timeoutBypass = setTimeout(() => {
                     testVivo.pause();
                     testVivo.src = "";
@@ -203,7 +202,6 @@
                 }, 3000);
 
                 testVivo.play().then(() => {
-                    // Si responde rápido, cancelamos el bypass y conectamos el vivo real
                     clearTimeout(timeoutBypass);
                     testVivo.pause();
                     testVivo.src = "";
@@ -217,7 +215,6 @@
                         subtituloRadio.innerText = "🔴 Transmitiendo en vivo desde Rivera, Uruguay";
                     });
                 }).catch(() => {
-                    // Si tira error al instante
                     clearTimeout(timeoutBypass);
                     if(playlist.length > 0) reproducirAleatoria();
                 });
@@ -260,6 +257,7 @@
         }
         db.collection("oyentes_activos").onSnapshot(snap => numOyentesElemento.innerText = snap.size);
         gestionarOyente();
+
         // --- SISTEMA DE GRILLA DE PROGRAMACIÓN ---
         const listaGrilla = document.getElementById('listaGrilla');
         
