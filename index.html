@@ -6,6 +6,42 @@
     <title>Radio CECAP Rivera</title>
     <link rel="stylesheet" href="style.css">
     <style>
+        /* Estilos para la Grilla de Programación */
+.grilla-section {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+    text-align: left;
+    color: white;
+}
+.grilla-section h3 {
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    padding-bottom: 10px;
+}
+.grilla-lista {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.grilla-lista li {
+    background: rgba(255, 255, 255, 0.1);
+    margin-bottom: 8px;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.grilla-dia-hora {
+    font-weight: bold;
+    color: #4CAF50; /* Un verde vibrante para resaltar */
+}
         /* Ajuste para el QR */
         .qr-section {
             margin-top: 30px;
@@ -65,6 +101,13 @@
             <div class="qr-text">
                 ¡ESCANEA Y<br>COMPARTE LA<br>RADIO DE CECAP!
             </div>
+            <!-- SECCIÓN GRILLA DE PROGRAMACIÓN -->
+        <div class="grilla-section">
+            <h3>📅 Programación de la Semana</h3>
+            <ul class="grilla-lista" id="listaGrilla">
+                <li>Cargando programación...</li>
+            </ul>
+        </div>
         </div>
     </div>
 
@@ -217,6 +260,25 @@
         }
         db.collection("oyentes_activos").onSnapshot(snap => numOyentesElemento.innerText = snap.size);
         gestionarOyente();
+        // --- SISTEMA DE GRILLA DE PROGRAMACIÓN ---
+        const listaGrilla = document.getElementById('listaGrilla');
+        
+        db.collection("programacion").orderBy("ordenDia").orderBy("horario").onSnapshot((snap) => {
+            listaGrilla.innerHTML = '';
+            if (snap.empty) {
+                listaGrilla.innerHTML = '<li>Aún no hay programas anunciados. ¡Próximamente!</li>';
+                return;
+            }
+            snap.forEach((doc) => {
+                const prog = doc.data();
+                listaGrilla.innerHTML += `
+                    <li>
+                        <span class="grilla-dia-hora">${prog.dia} | ${prog.horario}</span>
+                        <span>${prog.nombre}</span>
+                    </li>
+                `;
+            });
+        });
     </script>
 </body>
 </html>
