@@ -10,7 +10,7 @@
         h2 { color: #00d2ff; text-align: center; border-bottom: 2px solid #444; padding-bottom: 10px; }
         h3 { color: #ffeb3b; margin-bottom: 10px; }
         .card { background: #3d3d3d; padding: 20px; margin-bottom: 20px; border-radius: 10px; }
-        input[type="text"], input[type="file"], select { width: 100%; padding: 12px; margin: 8px 0; box-sizing: border-box; border-radius: 6px; border: none; background: #555; color: white; font-size: 14px; }
+        input[type="text"], input[type="file"] { width: 100%; padding: 12px; margin: 8px 0; box-sizing: border-box; border-radius: 6px; border: none; background: #555; color: white; font-size: 14px; }
         button { background: #00d2ff; color: #000; border: none; padding: 12px 20px; cursor: pointer; border-radius: 6px; font-weight: bold; width: 100%; margin-top: 10px; transition: 0.3s; }
         button:hover { background: #0099cc; }
         button.danger { background: #ff4444; color: white; margin-top: 5px; }
@@ -28,10 +28,32 @@
         .input-grilla::placeholder {
             color: #666 !important;
         }
-        /* Contenedor para botones de edición */
         .acciones-item {
             display: flex;
             gap: 5px;
+        }
+        /* Contenedor de días en cuadrícula */
+        .dias-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 10px;
+            margin: 10px 0;
+            background: #555;
+            padding: 12px;
+            border-radius: 6px;
+        }
+        .dias-grid label {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            user-select: none;
+        }
+        .dias-grid input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -57,16 +79,22 @@
         <div class="card">
             <h3>📅 Gestionar Grilla de Programación</h3>
             
-            <label style="font-size: 14px; color: #ffeb3b; font-weight: bold; display: block; margin-top: 10px;">1. Selecciona el Día:</label>
-            <select id="diaProg" class="input-grilla">
-                <option value="Lunes" data-orden="1">Lunes</option>
-                <option value="Martes" data-orden="2">Martes</option>
-                <option value="Miércoles" data-orden="3">Miércoles</option>
-                <option value="Jueves" data-orden="4">Jueves</option>
-                <option value="Viernes" data-orden="5">Viernes</option>
-                <option value="Sábado" data-orden="6">Sábado</option>
-                <option value="Domingo" data-orden="7">Domingo</option>
-            </select>
+            <label style="font-size: 14px; color: #ffeb3b; font-weight: bold; display: block; margin-top: 10px;">1. Selecciona los Días:</label>
+            <div class="dias-grid">
+                <label><input type="checkbox" name="diasSeleccionados" value="Lunes" data-orden="1"> Lu</label>
+                <label><input type="checkbox" name="diasSeleccionados" value="Martes" data-orden="2"> Ma</label>
+                <label><input type="checkbox" name="diasSeleccionados" value="Miércoles" data-orden="3"> Mi</label>
+                <label><input type="checkbox" name="diasSeleccionados" value="Jueves" data-orden="4"> Ju</label>
+                <label><input type="checkbox" name="diasSeleccionados" value="Viernes" data-orden="5"> Vi</label>
+                <label><input type="checkbox" name="diasSeleccionados" value="Sábado" data-orden="6"> Sá</label>
+                <label><input type="checkbox" name="diasSeleccionados" value="Domingo" data-orden="7"> Do</label>
+            </div>
+            
+            <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+                <button type="button" onclick="marcarDias('semana')" style="background: #444; color: #00d2ff; border: 1px solid #00d2ff; padding: 6px 12px; width: auto; margin: 0; font-size: 13px;">📅 Lu a Vi</button>
+                <button type="button" onclick="marcarDias('todos')" style="background: #444; color: #00d2ff; border: 1px solid #00d2ff; padding: 6px 12px; width: auto; margin: 0; font-size: 13px;">🌍 Todos</button>
+                <button type="button" onclick="marcarDias('ninguno')" style="background: #444; color: #aaa; border: 1px solid #aaa; padding: 6px 12px; width: auto; margin: 0; font-size: 13px;">🧹 Limpiar</button>
+            </div>
             
             <label style="font-size: 14px; color: #ffeb3b; font-weight: bold; display: block; margin-top: 10px;">2. Escribe el Horario:</label>
             <input type="text" id="horarioProg" class="input-grilla" placeholder="Ej: 14:00 a 16:00">
@@ -188,71 +216,99 @@
             }
         }
 
-        // --- SISTEMA DE GESTIÓN DE GRILLA (CREAR, EDITAR Y BORRAR) ---
+        // --- SISTEMA DE GESTIÓN DE GRILLA (CHECKBOXES MULTI-DÍA) ---
         let programaEditandoId = null;
 
+        // Función auxiliar para marcar/desmarcar casillas velozmente
+        function marcarDias(tipo) {
+            const checkboxes = document.querySelectorAll('input[name="diasSeleccionados"]');
+            checkboxes.forEach(cb => {
+                const orden = parseInt(cb.getAttribute("data-orden"));
+                if (tipo === 'todos') cb.checked = true;
+                else if (tipo === 'ninguno') cb.checked = false;
+                else if (tipo === 'semana') {
+                    cb.checked = (orden >= 1 && orden <= 5); // Lunes a Viernes
+                }
+            });
+        }
+
         function guardarPrograma() {
-            const selectDia = document.getElementById("diaProg");
-            const dia = selectDia.value;
-            const orden = parseInt(selectDia.options[selectDia.selectedIndex].getAttribute("data-orden"));
+            const checkboxes = document.querySelectorAll('input[name="diasSeleccionados"]:checked');
             const horario = document.getElementById("horarioProg").value;
             const nombre = document.getElementById("nombreProg").value;
             
+            if(checkboxes.length === 0) {
+                alert("⚠️ Por favor, selecciona al menos un día de la semana.");
+                return;
+            }
             if(!horario || !nombre) {
                 alert("⚠️ Por favor, completa el horario y el nombre del programa.");
                 return;
             }
-
-            const datosPrograma = {
-                dia: dia,
-                ordenDia: orden,
-                horario: horario,
-                nombre: nombre
-            };
             
             if (programaEditandoId) {
-                // Modo Edición: Actualizar registro existente
-                db.collection("programacion").doc(programaEditandoId).update(datosPrograma)
+                // Modo Edición: Actualiza el bloque individual que seleccionaste
+                const cb = checkboxes[0]; // Toma el primer día checkeado en caso de edición
+                db.collection("programacion").doc(programaEditandoId).update({
+                    dia: cb.value,
+                    ordenDia: parseInt(cb.getAttribute("data-orden")),
+                    horario: horario,
+                    nombre: nombre
+                })
                 .then(() => {
                     cancelarEdicion();
                 }).catch(err => console.log("Error al editar:", err));
             } else {
-                // Modo Creación: Agregar nuevo registro
-                db.collection("programacion").add(datosPrograma)
-                .then(() => {
+                // Modo Creación: Crea un documento independiente por cada día seleccionado
+                let promesas = [];
+                checkboxes.forEach(cb => {
+                    promesas.push(
+                        db.collection("programacion").add({
+                            dia: cb.value,
+                            ordenDia: parseInt(cb.getAttribute("data-orden")),
+                            horario: horario,
+                            nombre: nombre
+                        })
+                    );
+                });
+
+                // Esperamos que se guarden todas las inserciones
+                Promise.all(promesas).then(() => {
                     document.getElementById("horarioProg").value = "";
                     document.getElementById("nombreProg").value = "";
-                }).catch(err => console.log("Error al agregar:", err));
+                    marcarDias('ninguno'); // Limpia las casillas
+                }).catch(err => console.log("Error al agregar lote:", err));
             }
         }
 
         function cargarParaEditar(id, dia, horario, nombre) {
-            // Llenar las cajas de texto con los datos actuales
-            document.getElementById("diaProg").value = dia;
+            marcarDias('ninguno'); // Resetea casillas
+            
+            // Busca la casilla del día correspondiente y la marca
+            const checkboxes = document.querySelectorAll('input[name="diasSeleccionados"]');
+            checkboxes.forEach(cb => {
+                if(cb.value === dia) cb.checked = true;
+            });
+
             document.getElementById("horarioProg").value = horario;
             document.getElementById("nombreProg").value = nombre;
             
-            // Guardar el ID del programa que se está editando
             programaEditandoId = id;
             
-            // Cambiar la apariencia del botón
             const btnGuardar = document.getElementById("btnGuardarProg");
             btnGuardar.innerHTML = "💾 Guardar Cambios";
-            btnGuardar.style.background = "#ff9800"; // Naranja para resaltar
+            btnGuardar.style.background = "#ff9800";
             
-            // Mostrar botón cancelar
             document.getElementById("btnCancelarEdicion").style.display = "block";
-            
-            // Hacer scroll suave hacia arriba para ver el formulario
-            document.getElementById("diaProg").scrollIntoView({ behavior: 'smooth' });
+            document.querySelector('.dias-grid').scrollIntoView({ behavior: 'smooth' });
         }
 
         function cancelarEdicion() {
             programaEditandoId = null;
             document.getElementById("horarioProg").value = "";
             document.getElementById("nombreProg").value = "";
+            marcarDias('ninguno');
             
-            // Restaurar botones a su estado original
             const btnGuardar = document.getElementById("btnGuardarProg");
             btnGuardar.innerHTML = "➕ Agregar a la Grilla";
             btnGuardar.style.background = "#4CAF50";
@@ -263,18 +319,16 @@
         function borrarPrograma(id) {
             if(confirm("¿Seguro que quieres borrar este programa de la grilla?")) {
                 db.collection("programacion").doc(id).delete();
-                // Si justo lo estábamos editando, cancelamos la edición
                 if (programaEditandoId === id) {
                     cancelarEdicion();
                 }
             }
         }
 
-       // MOSTRAR LISTA DE PROGRAMAS EN EL ADMIN (CON ORDENAMIENTO JS)
+        // MOSTRAR LISTA DE PROGRAMAS EN EL ADMIN (CON ORDENAMIENTO JS)
         db.collection("programacion").onSnapshot((snap) => {
             const adminLista = document.getElementById('adminListaGrilla');
             adminLista.innerHTML = '';
-            
             if (snap.empty) {
                 adminLista.innerHTML = "<p style='color: #aaa; font-size: 14px;'>No hay programas configurados.</p>";
                 return;
@@ -283,17 +337,14 @@
             let programas = [];
             snap.forEach(doc => {
                 let data = doc.data();
-                data.id = doc.id; // Guardamos el ID internamente
+                data.id = doc.id;
                 programas.push(data);
             });
             
-            // Ordenamos por día y hora de forma segura
             programas.sort((a, b) => {
                 let ordenA = a.ordenDia || 1;
                 let ordenB = b.ordenDia || 1;
-                if (ordenA !== ordenB) {
-                    return ordenA - ordenB;
-                }
+                if (ordenA !== ordenB) return ordenA - ordenB;
                 let horaA = a.horario || "";
                 let horaB = b.horario || "";
                 return horaA.localeCompare(horaB);
