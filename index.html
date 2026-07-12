@@ -3,9 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>La Voz de CECAP</title>
+    <title>Radio CECAP Rivera</title>
     <link rel="stylesheet" href="style.css">
     <style>
+        /* --- CORRECCIÓN CRÍTICA DE SCROLL (DESBLOQUEO DE PANTALLA) --- */
+        html, body {
+            overflow-y: auto !important;  /* Forza a que aparezca el scroll vertical */
+            height: auto !important;      /* Quita la altura rígida fija */
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        .player-container {
+            height: auto !important;      /* Permite que el contenedor crezca con la grilla */
+            max-height: none !important;  /* Elimina cualquier tope de altura */
+            margin: 20px auto !important; /* Centra el reproductor y le da aire arriba y abajo */
+            padding-bottom: 40px !important; /* Espacio extra al final para que respire el scroll */
+        }
+
         /* Ajuste para el QR */
         .qr-section {
             margin-top: 30px;
@@ -71,11 +88,11 @@
 </head>
 <body>
     <div class="player-container">
-        <img src="LogoRadio.jpeg" alt="Logo CECAP" id="logoRadio" 
+        <img src="logocecap.jpg" alt="Logo CECAP" id="logoRadio" 
              style="width: 150px; border-radius: 50%; cursor: pointer; border: 3px solid white;" 
              onclick="accesoAdmin()">
         
-        <h1>La Voz de CECAP</h1>
+        <h1>Radio CECAP Rivera</h1>
         <p id="subtitulo">Haz clic en ▶️ Escuchar para conectar</p>
 
         <div class="visualizer" id="visualizer">
@@ -268,11 +285,9 @@
                 return;
             }
             
-            // Convertimos los datos de Firebase a un formato que podamos ordenar localmente
             let programas = [];
             snap.forEach((doc) => programas.push(doc.data()));
             
-            // Ordenamos primero por el número de día (1 al 7) y luego por horario
             programas.sort((a, b) => {
                 if (a.ordenDia !== b.ordenDia) {
                     return a.ordenDia - b.ordenDia;
@@ -280,7 +295,6 @@
                 return a.horario.localeCompare(b.horario);
             });
 
-            // Mostramos los programas ordenados
             programas.forEach((prog) => {
                 listaGrilla.innerHTML += `
                     <li>
