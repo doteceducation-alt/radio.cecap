@@ -286,7 +286,7 @@
         db.collection("oyentes_activos").onSnapshot(snap => numOyentesElemento.innerText = snap.size);
         gestionarOyente();
 
-        // --- SISTEMA DE GRILLA DE PROGRAMACIÓN (CON ORDENAMIENTO JS) ---
+        // --- SISTEMA DE GRILLA DE PROGRAMACIÓN (CON ORDENAMIENTO JS Y DISEÑO A 2 LÍNEAS) ---
         const listaGrilla = document.getElementById('listaGrilla');
         
         db.collection("programacion").onSnapshot((snap) => {
@@ -307,10 +307,15 @@
             });
 
             programas.forEach((prog) => {
+                // Nuevo diseño profesional de 2 líneas
                 listaGrilla.innerHTML += `
-                    <li>
-                        <span class="grilla-dia-hora">${prog.dia} | ${prog.horario}</span>
-                        <span>${prog.nombre}</span>
+                    <li style="flex-direction: column; align-items: flex-start; border-left: 4px solid #00d2ff; padding: 12px 15px;">
+                        <span style="font-size: 16px; font-weight: bold; color: #ffffff; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px;">
+                            ${prog.nombre}
+                        </span>
+                        <span style="font-size: 13.5px; color: #4CAF50;">
+                            🗓️ ${prog.dia} | ⏰ ${prog.horario}
+                        </span>
                     </li>
                 `;
             });
