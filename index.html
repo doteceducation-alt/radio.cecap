@@ -23,6 +23,17 @@
             padding-bottom: 40px !important; /* Espacio extra al final para que respire el scroll */
         }
 
+        /* --- AJUSTE PARA EL NUEVO ESLOGAN EN UNA SOLA LÍNEA --- */
+        h1 {
+            font-size: 20px !important;      /* Tamaño ajustado para celulares */
+            white-space: nowrap !important;  /* Prohíbe terminantemente el salto de línea */
+            text-align: center;
+            overflow: hidden;
+            text-overflow: ellipsis;         /* Agrega "..." si la pantalla es ridículamente estrecha */
+            margin-top: 15px;
+            margin-bottom: 5px;
+        }
+
         /* Ajuste para el QR */
         .qr-section {
             margin-top: 30px;
